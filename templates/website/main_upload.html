@@ -1,4 +1,5 @@
 {% load static %}
+{#{% load media %}#}
 
 <!DOCTYPE html><!-- HTML5 -->
 <html prefix="og: http://ogp.me/ns#" lang="ru-RU" dir="ltr">
@@ -26,8 +27,8 @@
 		<link rel="stylesheet" type="text/css" href="{% static 'pcss/main.css' %}" media="screen" />
 		<!--[if lt IE 9]><link rel="stylesheet" type="text/css" href="{% static 'main.cssmain.cssa' %}="screen" /><![endif]-->
 		
-		<script type="text/javascript" src="{% static 'res/jquery.js' %}"></script>
-		<script type="text/javascript" src="{% static 'res/x5engine.js' %}" data-files-version="12-0-6-24"></script>
+{#		<script type="text/javascript" src="{% static 'res/jquery.js' %}"></script>#}
+{#		<script type="text/javascript" src="{% static 'res/x5engine.js' %}" data-files-version="12-0-6-24"></script>#}
 		
 		
 		
@@ -110,6 +111,8 @@
 {#						<input type="submit" value="Проверить" />#}
 {#						<input type="reset" value="Сброс" />#}
 {#					</div>#}
+                <text>{{ img_name }}</text>
+                <img src="{% static '1.jpg' %}" alt="">
                         {% block content %}
                             <form method="post" enctype="multipart/form-data" data-extensions="jpg,png,PNG,jpeg">
                                 {% csrf_token %}

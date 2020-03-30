@@ -67,9 +67,16 @@ def upload_file(request):
 
 
 def upload_file_main(request):
+    uploaded_file = None
+    file = None
     if request.method == "POST":
         uploaded_file = request.FILES['img']
+        if uploaded_file.multiple_chunks(chunk_size=10485760):
+            file = uploaded_file.read()
+
+
         print(uploaded_file.name)
         print(uploaded_file.size)
-    return render(request, "website/main_upload.html")
+        print(uploaded_file.multiple_chunks(chunk_size=10485760))
+    return render(request, "website/main_upload.html", {'file': file, 'img_name': uploaded_file.name})
     # return render(request, "website/upload_doc.html")
