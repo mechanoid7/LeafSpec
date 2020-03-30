@@ -1,4 +1,5 @@
 {% load static %}
+
 <!DOCTYPE html><!-- HTML5 -->
 <html prefix="og: http://ogp.me/ns#" lang="ru-RU" dir="ltr">
 	<head>
@@ -23,7 +24,7 @@
 		<link rel="stylesheet" type="text/css" href="{% static 'style/menu.css' %}" media="screen" />
 		<!--[if lte IE 7]><link rel="stylesheet" type="text/css" href="style/ie.css?12-0-6-24" media="screen" /><![endif]-->
 		<link rel="stylesheet" type="text/css" href="{% static 'pcss/main.css' %}" media="screen" />
-		<!--[if lt IE 9]><link rel="stylesheet" type="text/css" href="{% static main.cssmain.cssa="screen" /><![endif]-->
+		<!--[if lt IE 9]><link rel="stylesheet" type="text/css" href="{% static 'main.cssmain.cssa' %}="screen" /><![endif]-->
 		
 		<script type="text/javascript" src="{% static 'res/jquery.js' %}"></script>
 		<script type="text/javascript" src="{% static 'res/x5engine.js' %}" data-files-version="12-0-6-24"></script>
@@ -93,11 +94,11 @@
 				</div></div><div id="imGroup_3" class="imVGroup">
 				<div id="imGroup_4" class="imHGroup">
 				<div id="imGroup_5" class="imVGroup">
-				<div id="imCell_4"></div><div id="imCell_3"><div id="imCellStyleGraphics_3"></div><div id="imCellStyle_3" data-responsive-sequence-number="3"><form id="imObjectForm_3" action="imemail/imEmailForm_36sk1mj7.php" method="post" enctype="multipart/form-data">
+				<div id="imCell_4"></div><div id="imCell_3"><div id="imCellStyleGraphics_3"></div><div id="imCellStyle_3" data-responsive-sequence-number="3"><form id="imObjectForm_3" action="/result/" method="get" enctype="multipart/form-data"> {# action="imemail/imEmailForm_36sk1mj7.php" method="post" #}
 					<fieldset class="first">
 						<div>
 							<div id="imObjectForm_3_1_container" class="imObjectFormFieldContainer"><label id="imObjectForm_3_1_label" for="imObjectForm_3_1">Выберите файл изображения для сканирования:*</label><br /><div id="imObjectForm_3_1_field">
-				<input type="file" class="mandatory " data-extensions="jpg,png,jpeg" id="imObjectForm_3_1" name="imObjectForm_3_1" /></div>
+				<input type="file" class="mandatory " data-extensions="jpg,png,PNG,jpeg" id="imObjectForm_3_1" name="imObjectForm_3_1" /></div>
 				</div>
 						</div>
 					</fieldset>
