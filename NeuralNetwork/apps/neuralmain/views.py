@@ -1,5 +1,6 @@
 import os
 
+from django.conf import settings
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse_lazy
@@ -8,7 +9,7 @@ from django.core.files.storage import FileSystemStorage
 
 from django.views.generic.base import View
 from .forms import UploadFileForm  # PhotoFormUploadFileForm
-from .models import Photo
+from .models import PhotoRequest
 from .img_handler import handle  # функция для обработки изображения
 from .models import PhotoInDatabase
 from NeuralNetwork.settings import BASE_DIR
@@ -43,8 +44,8 @@ def upload(request):
     return render(request, 'website/upload.html', {})
 
 
-def result(request):
-    return render(request, 'website/main.html', {})
+# def result(request):
+#     return render(request, 'website/main.html', {})
 
 
 def index(request):
@@ -75,7 +76,7 @@ def upload_file_main(request):
         fs = FileSystemStorage()
         name = fs.save("requests\\"+uploaded_file.name, uploaded_file)  # BASE_DIR_DATA_REQUESTS+"\\"+
         url = fs.url(name)
-        context = {'url': fs.url(name), "sdww": 225}
+        context = {'url': fs.url(name), "path": 225}
         print("File url:", url)
         print("Context", context)
         print("BASE_DIR:", BASE_DIR)
@@ -83,8 +84,13 @@ def upload_file_main(request):
         print("OS.path:", os.path.dirname(os.path.dirname(os.path.abspath(__file__)))+url)
         print("Big size upload file:", uploaded_file.multiple_chunks(chunk_size=10485760))
         print(context)
-        # path = handle(url)
-        # context['url'] = path
 
-    return render(request, "website/main_upload.html", context)  # , 'img_name': uploaded_file.name #, {'file': file}
-    # return render(request, "website/upload_doc.html")
+    return render(request, "website/main_upload.html", context)
+
+
+def photo_in_database_list(request):
+    return render(request, 'website/photo_in_database_list.html')
+
+
+def pattern(request):
+    return render(request, 'website/pattern.html')

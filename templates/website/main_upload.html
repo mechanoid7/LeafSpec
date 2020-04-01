@@ -111,7 +111,7 @@
 {#						<input type="submit" value="Проверить" />#}
 {#						<input type="reset" value="Сброс" />#}
 {#					</div>#}
-                <text>{{ img_name }};{{ path }}</text>
+                <text>{{ img_name}};{{ url }}</text>
                 <img src="{% static '1.jpg' %}" alt="" height="100" width="200">
                         {% block content %}
                             <form method="post" enctype="multipart/form-data" data-extensions="jpg,png,PNG,jpeg">
