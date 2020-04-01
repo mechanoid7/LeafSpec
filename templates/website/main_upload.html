@@ -111,8 +111,8 @@
 {#						<input type="submit" value="Проверить" />#}
 {#						<input type="reset" value="Сброс" />#}
 {#					</div>#}
-                <text>{{ img_name }}</text>
-                <img src="{% static '1.jpg' %}" alt="">
+                <text>{{ img_name }};{{ path }}</text>
+                <img src="{% static '1.jpg' %}" alt="" height="100" width="200">
                         {% block content %}
                             <form method="post" enctype="multipart/form-data" data-extensions="jpg,png,PNG,jpeg">
                                 {% csrf_token %}
@@ -121,6 +121,9 @@
                                 <button type="submit">Upload</button>
                             </form>
                         {% endblock %}
+                        {% if url %}
+                            <p>Debug mode: your file: <a href="{{ url }}">{{ url }}</a> </p>
+                        {% endif %}
 				</form>
 				<script>x5engine.boot.push('x5engine.imForm.initForm(\'#imObjectForm_3\', false, {type: \'tip\', showAll: true, classes: \'validator\', landingPage: \'index.html\', labelColor: \'#000000\', fieldColor: \'#000000\', selectedFieldColor: \'#000000\'})');</script>
 				</div></div>
