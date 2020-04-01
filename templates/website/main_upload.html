@@ -111,12 +111,12 @@
 {#						<input type="submit" value="Проверить" />#}
 {#						<input type="reset" value="Сброс" />#}
 {#					</div>#}
-                <text>{{ img_name}};{{ url }}</text>
-                <img src="{% static '1.jpg' %}" alt="" height="100" width="200">
+{#                <text>{{ url }}</text>#}
+{#                <img src="{% static '1.jpg' %}" alt="" height="100" width="200">#}
                         {% block content %}
                             <form method="post" enctype="multipart/form-data" data-extensions="jpg,png,PNG,jpeg">
                                 {% csrf_token %}
-                                <text> Chida <br></text>
+                                <br>
                                 <input type="file" name="img">
                                 <button type="submit">Upload</button>
                             </form>
@@ -140,7 +140,7 @@
 				</div>
 				</div><div id="imCell_2"></div>
 				</div>
-{#				<div id="imFooPad" style="height: 286px; float: left;">&nbsp;</div><div id="imBtMn"><a href="main.html">Главная</a> | <a href="upload.html">Выгрузить фото</a> | <a href="auth.html">Авторизация</a> | <a href="contacts.html">Контакты</a> | <a href="imsitemap.html">Главная Карта Сайта</a></div>#}
+{#				<div id="imFooPad" style="height: 286px; float: left;">&nbsp;</div><div id="imBtMn"><a href="main.html">Главная</a> | <a href="upload_old.html">Выгрузить фото</a> | <a href="auth.html">Авторизация</a> | <a href="contacts.html">Контакты</a> | <a href="imsitemap.html">Главная Карта Сайта</a></div>#}
 				<div class="imClear"></div>
 			</div>
 			<div id="imFooter">
