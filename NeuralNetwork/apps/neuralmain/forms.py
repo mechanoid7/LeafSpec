@@ -10,5 +10,5 @@ from .models import PhotoToDatabase
 class PhotoToDatabaseForm(forms.ModelForm):
     class Meta:
         model = PhotoToDatabase
-        fields = ('photo_author', 'photo_group', 'photo_file')  # 'photo_name', 'photo_author_ip', 'photo_date',
+        fields = ('photo_author', 'photo_group', 'photo_file', 'photo_author_ip', 'photo_name')  # , 'photo_author_ip', 'photo_name',        #'photo_date'
 

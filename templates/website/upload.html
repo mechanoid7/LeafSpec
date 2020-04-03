@@ -8,7 +8,15 @@
 {% block content %}
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Отправить</button>
+{#        {% for o in form %}#}
+{#            {{ o }}#}
+{#        {% endfor %}#}
+        Имя автора:{{ form.photo_author }}<br/>
+        Вид растения:{{ form.photo_group }}<br/>
+        {{ form.photo_file }}
+{#        {{ form.as_p }}#}
+        <div id="imObjectForm_1_buttonswrap">
+            <br/><br/><button type="submit">Отправить</button>
+        </div>
     </form>
 {% endblock %}

@@ -4,13 +4,9 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # path('neuro/', views.index, name='index'),
-    # path('other/', views.main_page, name='other'),
     path('auth/', views.auth, name='auth'),
     path('contacts/', views.contacts, name='contacts'),
-    # path('upload/', views.upload, name='upload'),
-    path('upload/', views.upload, name='upload'),
-    # path('result/', views.result),
+    path('upload/', views.upload, '', name='upload'),
     path('', views.main_user_request, name='upload_file_main'),
 ]
 
