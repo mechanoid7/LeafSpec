@@ -1,0 +1,26 @@
+.H1 {
+    text-align: center;
+    color: #3f7320;
+    font-size: 200%;
+    margin: 10px
+}
+
+.H2 {
+    text-align: center;
+    color: #3f7320;
+    font-size: 200%;
+    margin: 10px
+}
+
+.Err {
+    text-align: left;
+    font-weight: bold;
+    font-size: 100%;
+    border: dotted #666 1px;
+    border-left:solid #24ff31 7px;
+    margin:10px 5px;
+    padding:20px;
+    color:#345;
+    font-style:italic;
+    background: #d4fcd1;
+}

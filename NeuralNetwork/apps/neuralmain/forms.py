@@ -1,5 +1,5 @@
 from django import forms
-from .models import PhotoToDatabase
+from .models import PhotoToDatabase, PhotoRequest
 
 
 # class UploadFileForm(forms.Form):
@@ -12,3 +12,8 @@ class PhotoToDatabaseForm(forms.ModelForm):
         model = PhotoToDatabase
         fields = ('photo_author', 'photo_group', 'photo_file', 'photo_author_ip', 'photo_name')  # , 'photo_author_ip', 'photo_name',        #'photo_date'
 
+
+class PhotoRequestForm(forms.ModelForm):
+    class Meta:
+        model = PhotoRequest
+        fields = ('photo_file',)

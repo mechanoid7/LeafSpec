@@ -9,17 +9,19 @@
 		<meta charset="utf-8" />
 		<!--[if IE]><meta http-equiv="ImageToolbar" content="False" /><![endif]-->
 		<meta name="author" content="Mechanoid" />
-		<meta name="description" content="Pattern for site Leaf Spectator" />
-		<meta property="og:locale" content="ru-RU" />
+		<meta name="description" content="LeafSpec project" />
 		<meta property="og:type" content="website" />
-		<meta property="og:url" content="http://leafspec.com/pattern.html" />
-		<meta property="og:title" content="Pattern" />
+		<meta property="og:url" content="http://leafspec.com/" />
+		<meta property="og:title" content="LeafSpec" />
 		<meta property="og:site_name" content="Leaf spectator" />
-		<meta property="og:description" content="Pattern for site Leaf Spectator" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 {#    end METADATA#}
+        {% block sourse %}
+        {% endblock %}
 		<link rel="icon" href="{% static 'favicon.png' %}" type="image/png" />
 		<link rel="stylesheet" type="text/css" href="{% static 'style/reset.css' %}" media="screen,print" />
+		<link rel="stylesheet" type="text/css" href="{% static 'style/fonts.css' %}"/>
+		<link rel="stylesheet" type="text/css" href="{% static 'style/buttons.css' %}"/>
 		<link rel="stylesheet" type="text/css" href="{% static 'style/print.css' %}" media="print" />
 		<link rel="stylesheet" type="text/css" href="{% static 'style/style.css' %}" media="screen,print" />
 		<link rel="stylesheet" type="text/css" href="{% static 'style/template.css' %}" media="screen" />
@@ -35,16 +37,16 @@
 		<div id="imFooterBg"></div>
 		<div id="imPage">
 			<div id="imHeader">
-				<h1 class="imHidden">Leaf spectator</h1>
-
+{#				<h1 class="imHidden">Leaf spectator</h1>#}
 			</div>
-			<a class="imHidden" href="#imGoToCont" title="Заголовок главного меню">Перейти к контенту</a>
-			<a id="imGoToMenu"></a><p class="imHidden">Главное меню:</p>
+{#			<a class="imHidden" href="#imGoToCont" title="Заголовок главного меню">Перейти к контенту</a>#}
+{#			<a id="imGoToMenu"></a><p class="imHidden">Главное меню:</p>#}
 			<div id="imMnMnGraphics"></div>
 			<div id="imMnMn" class="auto">
 				<div class="hamburger-site-background menu-mobile-hidden"></div><div class="hamburger-button"><div><div><div class="hamburger-bar"></div><div class="hamburger-bar"></div><div class="hamburger-bar"></div></div></div></div><div class="hamburger-menu-background-container"><div class="hamburger-menu-background menu-mobile-hidden"><div class="hamburger-menu-close-button"><span>&times;</span></div></div></div>
-				<span itemscope itemtype="http://schema.org/Attorney"><a itemprop="url" href="/pattern"><img src="{% static 'style/responsive-logo.png' %}" itemprop="logo" class="menu-mobile-logo" alt="Leaf spectator"/></a>
-				</span><ul class="auto menu-mobile-hidden">
+				<span itemscope itemtype="http://schema.org/Attorney"><a itemprop="url" href="/"><img src="{% static 'style/responsive-logo.png' %}" itemprop="logo" class="menu-mobile-logo" alt="Leaf spectator"/></a>
+				</span>
+                <ul class="auto menu-mobile-hidden">
 					<li id="imMnMnNode0" class="imPage{% block current_main %}{% endblock %}">
 						<a href="/">
 							<span class="imMnMnFirstBg">
@@ -72,24 +74,14 @@
 					</li></ul>
 			</div>
 			<div id="imContent">
-
 {#                block for code out pattern#}
-
                 {% block content %}
                 {% endblock %}
-
-
 				</div>
 				<div id="imGroup_10" class="imEGroup"></div>
-
-				</div>
+            </div>
 			<div id="imFooter">
 				<div id="imFooterResponsiveContent">All rights reserved. Mechanoid. 2020.</div>
 			</div>
-
-
-{#		<span class="imHidden"><a href="#imGoToCont" title="Прочесть эту страницу заново">Назад к содержимому</a> | <a href="#imGoToMenu" title="Прочесть этот сайт заново">Назад к главному меню</a></span>#}
-{##}
-{#		<noscript class="imNoScript"><div class="alert alert-red">Для использования этого сайта необходимо включить JavaScript.</div></noscript>#}
 	</body>
 </html>

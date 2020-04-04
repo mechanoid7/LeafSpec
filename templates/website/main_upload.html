@@ -4,6 +4,22 @@
 <!DOCTYPE html><!-- HTML5 -->
 <html prefix="og: http://ogp.me/ns#" lang="ru-RU" dir="ltr">
 	<head>
+        <style>.button7{
+          font-weight: 700;
+          color: white;
+          text-decoration: none;
+          padding: .8em 1em calc(.8em + 3px);
+          border-radius: 3px;
+          background: rgb(64,199,129);
+          box-shadow: 0 -3px rgb(53,167,110) inset;
+          transition: 0.2s;
+        }
+        .button7:hover { background: rgb(53, 167, 110); }
+        .button7:active {
+          background: rgb(33,147,90);
+          box-shadow: 0 3px rgb(33,147,90) inset;
+        }</style>
+
 		<title>Главная - Leaf spectator - Leaf spectator</title>
 		<meta charset="utf-8" />
 		<!--[if IE]><meta http-equiv="ImageToolbar" content="False" /><![endif]-->
@@ -107,23 +123,21 @@
 					<fieldset>
 						<input type="text" id="imObjectForm_3_prot" name="imSpProt" />
 					</fieldset>
-{#                    <div id="imObjectForm_3_buttonswrap">#}
-{#						<input type="submit" value="Проверить" />#}
-{#						<input type="reset" value="Сброс" />#}
-{#					</div>#}
-{#                <text>{{ url }}</text>#}
-{#                <img src="{% static '1.jpg' %}" alt="" height="100" width="200">#}
-                        {% block content %}
-                            <form method="post" enctype="multipart/form-data" data-extensions="jpg,png,PNG,jpeg">
+
+                            <h1>{{ message }}</h1>
+                            <form method="post" enctype="multipart/form-data">
                                 {% csrf_token %}
                                 <br>
                                 <input type="file" name="img">
-                                <button type="submit">Upload</button>
+
+                                <button type="submit" id="button7">Upload</button><br/>
+                                <p><input type="submit" class="button7" value="Upload2"></p>
+
+{#                                <input type="submit" value="Button">#}
                             </form>
-                        {% endblock %}
-                        {% if url %}
-                            <p>Debug mode: your file: <a href="{{ url }}">{{ url }}</a> </p>
-                        {% endif %}
+{#                        {% if url %}#}
+{#                            <p>Debug mode: your file: <a href="{{ url }}">{{ url }}</a> </p>#}
+{#                        {% endif %}#}
 				</form>
 				<script>x5engine.boot.push('x5engine.imForm.initForm(\'#imObjectForm_3\', false, {type: \'tip\', showAll: true, classes: \'validator\', landingPage: \'index.html\', labelColor: \'#000000\', fieldColor: \'#000000\', selectedFieldColor: \'#000000\'})');</script>
 				</div></div>

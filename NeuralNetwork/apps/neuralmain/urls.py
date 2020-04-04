@@ -7,7 +7,8 @@ urlpatterns = [
     path('auth/', views.auth, name='auth'),
     path('contacts/', views.contacts, name='contacts'),
     path('upload/', views.upload, '', name='upload'),
-    path('', views.main_user_request, name='upload_file_main'),
+    # path('', views.main_user_request, name='main_user_request'),
+    path('', views.main, name='upload_file_main'),
 ]
 
 if settings.DEBUG:

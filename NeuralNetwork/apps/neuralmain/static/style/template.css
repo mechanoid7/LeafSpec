@@ -24,7 +24,7 @@ body { margin: 0; padding: 0; text-align: left; }
 	#imContent { min-height: 520px; padding: 5px 5px 5px 5px; }
 	#imContentGraphics { min-height: 520px; top: 100px; bottom: 35px; left: 0; background-image: none; background-color: #FFFFFF; }
 	#imFooterBg { height: 35px; width: 100%; background-image: none; background-color: #BFFF80; }
-	#imFooter { min-height: 35px; height: auto; background-image: none; background-color: #80FF00; }
+	#imFooter { min-height: 35px; height: auto; background-image: none; background-color: #ff0907; }
 	#imFooterResponsiveContent { display: inline-block; margin-top: 10px; margin-bottom: 10px; margin-left: 5px; margin-right: 5px; font: normal normal normal 9pt 'Tahoma'; color: #204000; background-color: transparent; text-align: left; text-decoration: none; }
 	#imHeaderFlashBackground, #imFooterFlashBackground, .imTemplateContent, #imFooPad, #imBtMn, #imPgMn { display: none; }
 }

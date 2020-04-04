@@ -118,7 +118,7 @@
 	#imGroup_11 { width: 378px; height: 82px; }
 	#imCell_2 { width: 940px; min-height: 9px; }
 	#imTextObject_2 .text-container {border-style: solid; border-color: #A9A9A9; border-width: 0 1px 1px 1px;width: 100%; box-sizing: border-box;}
-	
+
 }
 @media  (max-width: 959px) and (min-width: 720px) {
 	#imGroup_1 { width: 706px; }
@@ -144,7 +144,7 @@
 	#imGroup_11 { width: 282px; height: 119px; }
 	#imCell_2 { width: 702px; min-height: 9px; }
 	#imTextObject_2 .text-container {border-style: solid; border-color: #A9A9A9; border-width: 0 1px 1px 1px;width: 100%; box-sizing: border-box;}
-	
+
 }
 @media  (max-width: 719px) and (min-width: 480px) {
 	#imGroup_1 { width: 470px; }
@@ -170,7 +170,7 @@
 	#imGroup_11 { width: 188px; height: 259px; }
 	#imCell_2 { width: 468px; min-height: 9px; }
 	#imTextObject_2 .text-container {border-style: solid; border-color: #A9A9A9; border-width: 0 1px 1px 1px;width: 100%; box-sizing: border-box;}
-	
+
 }
 @media  (max-width: 479px) {
 	#imGroup_1 { width: 100%; clear: left; }
@@ -200,5 +200,5 @@
 	#imCell_2 { clear: left; }
 	#imCell_2 { width: 100%; min-height: 6px; }
 	#imTextObject_2 .text-container {border-style: solid; border-color: #A9A9A9; border-width: 0 1px 1px 1px;width: 100%; box-sizing: border-box;}
-	
+
 }

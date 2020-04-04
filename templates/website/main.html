@@ -1,0 +1,31 @@
+{% extends 'website/pattern.html' %}
+{% load static %}
+
+{% block page_name %}
+    Главная
+{% endblock %}
+{% block current_main %} imMnMnCurrent{% endblock %}
+
+{% block content %}
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <h1 style="text-align: center; color: #3f7320; font-size: 200%; margin: 10px">Мы попробуем опознать ваше растение.</h1>
+        <h2 style="text-align: center; color: #3f7320; font-size: 100%; margin: 10px">Загрузите фото в форму ниже.<br/>Загружайте фотографию всего листа растения, держа лист ветрикально и в фокусе.</h2>
+        {% if message %}
+            <div class="Err">
+                <p>{{ message }}</p>
+            </div>
+        {% endif %}
+        {{ form.photo_file }}
+{#    <div class="button">#}
+        <button type="submit" class="button_default">123</button>
+
+        <input type="submit" class="button_d" value="только так">
+    <a type="submit" class="button_default" >а должно быть так</a>
+    <input class="button_default" type="submit" value="123">
+
+{#        <p type="submit">Проверить</p>#}
+{#    </div>#}
+
+    </form>
+{% endblock %}

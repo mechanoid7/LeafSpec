@@ -8,9 +8,10 @@ def get_photo_group(self):
     """Returns the match name for a tag"""
     return re.sub("\W+" , "", self.photo_group.lower())
 
+
 class PhotoRequest(models.Model):
-    photo_name = models.CharField("Имя фотографии", max_length=50)
-    photo_date = models.DateTimeField("Дата загрузки фото")
+    photo_name = models.CharField("Имя фотографии", max_length=50, default='')
+    photo_date = models.DateTimeField("Дата загрузки фото", default=datetime.now())
     photo_file = models.ImageField("Файл изображения", upload_to="requests/")
 
 
