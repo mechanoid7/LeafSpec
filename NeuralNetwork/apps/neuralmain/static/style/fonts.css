@@ -8,11 +8,11 @@
 .H2 {
     text-align: center;
     color: #3f7320;
-    font-size: 200%;
+    font-size: 100%;
     margin: 10px
 }
 
-.Err {
+.msg {
     text-align: left;
     font-weight: bold;
     font-size: 100%;

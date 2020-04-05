@@ -1,19 +1,27 @@
 /*.button {*/
 /*}*/
 .button_default {
+  margin: 15px;
   font-weight: 700;
   color: white;
   text-decoration: none;
   padding: .8em 1em calc(.8em + 3px);
-  border-radius: 5%;
-  background: rgb(64,199,129);
-  box-shadow: 0 -3px rgb(53,167,110) inset;
-  transition: 0.2s;
+  border-radius: 7px;
+  /*border-color: #479D20;*/
+  border: 2px solid #479D20;
+  mso-border-shadow: yes;
+  background: rgb(71, 157, 32);
+  box-shadow: 0 3px rgb(63, 128, 32);
+  transition: 0.1s;
 }
-.button_default:hover { background: rgb(53, 167, 110); }
+.button_default:hover {
+  background: rgb(61, 123, 31);
+  border: 2px solid #3D7B1F;
+
+}
 .button_default:active {
-  background: rgb(33,147,90);
-  box-shadow: 0 3px rgb(33,147,90) inset;
+  background: rgb(49, 98, 25);
+  box-shadow: 0 -3px rgb(63, 128, 32);
 }
 
 /*.button{*/

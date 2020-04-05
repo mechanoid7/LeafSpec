@@ -74,6 +74,7 @@ def main(request):
             name = fs.save("requests\\" + uploaded_file.name, uploaded_file)  # BASE_DIR_DATA_REQUESTS+"\\"+
             url = fs.url(name)
             form = PhotoRequestForm(request.POST, request.FILES)
+            data_to_page['message'] = "Успешно"
         else:
             form = PhotoRequestForm()
             data_to_page['message'] = "Файл не может быть больше 20мб."

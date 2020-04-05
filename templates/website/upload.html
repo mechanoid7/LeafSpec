@@ -11,12 +11,16 @@
 {#        {% for o in form %}#}
 {#            {{ o }}#}
 {#        {% endfor %}#}
-        Имя автора:{{ form.photo_author }}<br/>
-        Вид растения:{{ form.photo_group }}<br/>
-        {{ form.photo_file }}
+{#        <div style="margin: 10px">#}
+            <p style="margin: 5pt 15pt">Имя автора: {{ form.photo_author }}<br/></p>
+            <p style="margin: 5pt 15pt">Вид растения: {{ form.photo_group }}<br/></p>
+            <p style="margin: 5pt 15pt">{{ form.photo_file }}</p>
+{#        </div>#}
+
 {#        {{ form.as_p }}#}
         <div id="imObjectForm_1_buttonswrap">
-            <br/><br/><button type="submit">Отправить</button>
+            <button class="button_default">Отправить</button>
+{#            <br/><br/><button type="submit">Отправить</button>#}
         </div>
     </form>
 {% endblock %}
