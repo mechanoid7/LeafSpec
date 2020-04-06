@@ -1,3 +1,15 @@
+.main-page {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    margin-right: -50%;
+    transform: translate(-50%, -50%)
+}
+
+.main-page-obj{
+    margin: 5pt 15pt
+}
+
 .upload-page {
     /*position: absolute;*/
     position: center;

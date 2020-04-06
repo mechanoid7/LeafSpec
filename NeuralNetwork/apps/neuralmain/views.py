@@ -1,5 +1,5 @@
 import copy
-import datetime
+from datetime import datetime
 # import os
 # import time
 
@@ -85,51 +85,38 @@ def main(request):
     return render(request, "website/main.html", data_to_page)
 
 
-# def main_else(request):
-#     data_to_page = {}
-#     if request.method == 'POST':
-#         post = copy.deepcopy(request.POST)  # make request copy and change data
-#         post['photo_date'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # set current time
-#         post['photo_name'] = post['photo_group'] + '_' + str(post['photo_date'])  # name=group+time
-#         request.POST = post  # update request for database
-#         form = PhotoToDatabaseForm(request.POST, request.FILES)
-#         if form.is_valid():
-#             form.save()
-#             # return redirect('upload')  # update page
-#     else:
-#         form = PhotoRequestForm()
-#     data_to_page['form'] = form
-#     return render(request, "website/main.html", data_to_page)
-
-
-
-# global page_msg
 def upload(request):
     form = {}
     data_to_page = {}
     if request.method == 'POST':
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')  # take ip adress user
-        if x_forwarded_for:
-            ipaddress = x_forwarded_for.split(',')[-1].strip()
+        uploaded_file = request.FILES['photo_file']
+        # uploaded_file = request.FILES.get('photo_file', False)
+        print(str(uploaded_file))
+        if not uploaded_file.multiple_chunks(chunk_size=20971520):  # 20 MB
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')  # take ip adress user
+            if x_forwarded_for:
+                ipaddress = x_forwarded_for.split(',')[-1].strip()
+            else:
+                ipaddress = request.META.get('REMOTE_ADDR')
+
+            post = copy.deepcopy(request.POST)  # make request copy and change data
+            post['photo_author_ip'] = ipaddress  # set ip adress
+            post['photo_date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # set current time
+            post['photo_name'] = uploaded_file.name  # name=group+time
+            request.POST = copy.deepcopy(post)  # update request for database
+
+            form = PhotoToDatabaseForm(request.POST, request.FILES)
+            if form.is_valid():
+                form.save()
+                data_to_page['message'] = 'Спасибо за помощь проекту.'
+                # return redirect('upload')  # update page
         else:
-            ipaddress = request.META.get('REMOTE_ADDR')
-        # print("Ip adress request:", ipaddress)
-
-        post = copy.deepcopy(request.POST)  # make request copy and change data
-        post['photo_author_ip'] = ipaddress  # set ip adress
-        post['photo_date'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # set current time
-        post['photo_name'] = post['photo_group']+'_'+str(post['photo_date'])  # name=group+time
-        request.POST = post  # update request for database
-
-        form = PhotoToDatabaseForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            data_to_page['message'] = 'Спасибо за помощь проекту.'
-            # return redirect('upload')  # update page
+            data_to_page['error'] = 'Big file'
     else:
         form = PhotoToDatabaseForm()
     data_to_page['form'] = form
     return render(request, 'website/upload.html', data_to_page)  # {'form': form}
+
 
 
 def pattern(request):

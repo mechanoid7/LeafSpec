@@ -25,7 +25,7 @@ class PhotoToDatabase(models.Model):
     photo_author = models.CharField("Автор фотографии", max_length=50)
     photo_group = models.CharField("Вид растения", max_length=20)
     photo_author_ip = models.GenericIPAddressField("ip адресс автора", default='0.0.0.0')
-    photo_date = models.DateTimeField("Дата и время загрузки фото", default=datetime.now())
+    photo_date = models.DateTimeField("Дата и время загрузки фото", default='1111-11-11 11:11:11', max_length=25)
     photo_file = models.ImageField("Файл изображения", upload_to="img_to_database/")
 
     def __str__(self):

@@ -23,18 +23,10 @@
                 </div>
             {% endif %}
         {% endif %}
-
-        <div class="upload-form">Загрузить{{ form.photo_file }}</div>
-
-{#        <div class="upload">#}
-{#            <label for="file">Select</label><input class="upload" type="file" name="photo_file" accept="image/*" required="" id="id_photo_file">#}
-{#        </div>#}
-{#    <input class="input-file" type="file" name="photo_file" accept="image/*" required="" id="id_photo_file">#}
-{#    <label for="file">Select</label>#}
-{#    <label for="file">Select</label>#}
-
-        <button class="but-submit">Проверить!</button>
-{#        <input type="submit" class="button_default" value="Button2">#}
+        <span class="main-page">
+            <div class="main-page-obj" style="margin-top: 10%">{{ form.photo_file }}</div>
+            <button class="but-submit" style="width: 300px">Проверить!</button>
+        </span>
 
     </form>
 {% endblock %}

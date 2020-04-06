@@ -10,10 +10,10 @@ from .models import PhotoToDatabase, PhotoRequest
 class PhotoToDatabaseForm(forms.ModelForm):
     class Meta:
         model = PhotoToDatabase
-        fields = ('photo_author', 'photo_group', 'photo_file', 'photo_author_ip', 'photo_name')  # , 'photo_author_ip', 'photo_name',        #'photo_date'
+        fields = ('photo_author', 'photo_group', 'photo_file', 'photo_author_ip', 'photo_name', 'photo_date')  # , 'photo_author_ip', 'photo_name',        #'photo_date'
 
 
 class PhotoRequestForm(forms.ModelForm):
     class Meta:
         model = PhotoRequest
-        fields = ('photo_file',)
+        fields = ('photo_file', 'photo_date')
