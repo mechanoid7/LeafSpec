@@ -1,0 +1,26 @@
+.upload-page {
+    /*position: absolute;*/
+    position: center;
+    top: 30%;
+    left: 20%;
+    margin-right: -80%;
+    transform: translate(-20%, -80%)
+}
+
+.upload-page-obj{
+    margin: 5pt 15pt
+}
+.auth-page {
+    /*margin: 0;*/
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    margin-right: -50%;
+    transform: translate(-50%, -50%)
+}
+
+.auth-page-obj {
+    margin: 5pt 15pt
+}
+
+

@@ -1,6 +1,6 @@
 /*.button {*/
 /*}*/
-.button_default {
+.but-submit {
   margin: 15px;
   font-weight: 700;
   color: white;
@@ -14,12 +14,12 @@
   box-shadow: 0 3px rgb(63, 128, 32);
   transition: 0.1s;
 }
-.button_default:hover {
+.but-submit:hover {
   background: rgb(61, 123, 31);
   border: 2px solid #3D7B1F;
 
 }
-.button_default:active {
+.but-submit:active {
   background: rgb(49, 98, 25);
   box-shadow: 0 -3px rgb(63, 128, 32);
 }

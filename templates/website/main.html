@@ -8,15 +8,23 @@
 
 {% block content %}
     <form method="post" enctype="multipart/form-data">
+
         {% csrf_token %}
         <h1 class="H1">Мы попробуем опознать ваше растение.</h1>
-        <h2 class="H2">Загрузите фото в форму ниже.<br/>Загружайте фотографию всего листа растения, держа лист ветрикально и в фокусе.</h2>
-        {% if message %}
-            <div class="msg">
-                <p>{{ message }}</p>
+        <h2 class="H2">Загрузите фото в форму ниже.<br/>Загружайте фотографию всего листа растения, держа лист вертикально и в фокусе.</h2>
+        {% if error %}
+            <div class="err">
+                <p>{{ error }}</p>
             </div>
+        {% else %}
+            {% if message %}
+                <div class="msg">
+                    <p>{{ message }}</p>
+                </div>
+            {% endif %}
         {% endif %}
-        <div class="upload">Загрузить{{ form.photo_file }}</div>
+
+        <div class="upload-form">Загрузить{{ form.photo_file }}</div>
 
 {#        <div class="upload">#}
 {#            <label for="file">Select</label><input class="upload" type="file" name="photo_file" accept="image/*" required="" id="id_photo_file">#}
@@ -25,7 +33,7 @@
 {#    <label for="file">Select</label>#}
 {#    <label for="file">Select</label>#}
 
-        <button class="button_default">Проверить!</button>
+        <button class="but-submit">Проверить!</button>
 {#        <input type="submit" class="button_default" value="Button2">#}
 
     </form>

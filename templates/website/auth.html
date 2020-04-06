@@ -9,11 +9,11 @@
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
-    <span class="auth">
-        <p style="margin: 5pt 15pt">Логин: <input type="text" name="photo_author" maxlength="50" required="" id="id_photo_author"><br></p>
-        <p style="margin: 5pt 15pt">Пароль: <input type="text" name="photo_group" maxlength="20" required="" id="id_photo_group"><br></p>
-        <button class="button_default">Войти</button>
-    </span>
+    <span class="auth-page">
+        <text>Логин: </text><p class="auth-page-obj"><input type="text" name="photo_author" maxlength="50" required="" id="id_photo_author"><br></p>
+        <text>Пароль: </text><p class="auth-page-obj"><input type="text" name="photo_group" maxlength="20" required="" id="id_photo_group"><br></p>
+        <button style="align-content: center" class="but-submit">Войти</button>
+
 
     </form>
 {% endblock %}

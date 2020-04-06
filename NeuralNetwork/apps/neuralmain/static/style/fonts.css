@@ -12,6 +12,13 @@
     margin: 10px
 }
 
+.info {
+    text-align: left;
+    color: #333333;
+    font-size: 80%;
+    margin: 10px
+}
+
 .msg {
     text-align: left;
     font-weight: bold;
@@ -23,4 +30,17 @@
     color:#345;
     font-style:italic;
     background: #d4fcd1;
+}
+
+.err {
+    text-align: left;
+    font-weight: bold;
+    font-size: 100%;
+    border: dotted #666 1px;
+    border-left:solid #ff4500 7px;
+    margin:10px 5px;
+    padding:20px;
+    color:#345;
+    font-style: italic;
+    background: rgba(252, 205, 200, 0.69);
 }

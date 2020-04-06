@@ -8,19 +8,21 @@
 {% block content %}
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-{#        {% for o in form %}#}
-{#            {{ o }}#}
-{#        {% endfor %}#}
-{#        <div style="margin: 10px">#}
-            <p style="margin: 5pt 15pt">Имя автора: {{ form.photo_author }}<br/></p>
-            <p style="margin: 5pt 15pt">Вид растения: {{ form.photo_group }}<br/></p>
-            <p style="margin: 5pt 15pt">{{ form.photo_file }}</p>
-{#        </div>#}
-
-{#        {{ form.as_p }}#}
-        <div id="imObjectForm_1_buttonswrap">
-            <button class="button_default">Отправить</button>
-{#            <br/><br/><button type="submit">Отправить</button>#}
+        <h1 class="H1">Вы можете отправить нам фото листка растения. </h1>
+        <h2 class="H2">Если изображение будет соответствовать нашим требованиям, оно будет использовано для усовершенствования проекта.</h2>
+       {% if message %}
+        <div class="msg">
+            <p>{{ message }}</p>
         </div>
+        {% endif %}
+        <span class="upload-page">
+            <text>Имя автора: </text><p class="upload-page-obj">{{ form.photo_author }}<br/></p>
+            <text>Вид растения: </text><p class="upload-page-obj">{{ form.photo_group }}<br/></p>
+            <p class="upload-page-obj">{{ form.photo_file }}</p>
+            <button class="but-submit">Отправить</button>
+        </span>
+{#    <text class="info">Лист должен быть хорошо виден и освещён.<br/>Лист должен находится в центре изображения</text>#}
+    <p class="info">Лист должен быть хорошо виден и освещён.<br/>Лист должен находится в центре изображения</p>
+
     </form>
 {% endblock %}

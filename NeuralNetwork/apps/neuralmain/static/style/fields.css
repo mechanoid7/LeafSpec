@@ -1,5 +1,4 @@
-.upload {
-    content: 'Select some files';
+.upload-form {
     width: 157px;
     height: 57px;
     margin:20px 0;
@@ -16,7 +15,7 @@
     transition: 0.1s;
 }
 
-.upload input {
+.upload-form input {
     display: block !important;
     width: 157px !important;
     height: 57px !important;
@@ -24,70 +23,70 @@
     overflow: hidden !important;
 }
 
-.upload:hover {
+.upload-form:hover {
   background: rgb(61, 123, 31);
   border: 2px solid #3D7B1F;
 
 }
-.upload:active {
+.upload-form:active {
   background: rgb(49, 98, 25);
   box-shadow: 0 -3px rgb(63, 128, 32);
 }
 
-.custom-file-input::-webkit-file-upload-button {
-  visibility: hidden;
-}
-
-.custom-file-input::before {
-  margin:20px 0;
-  content: 'Select some files';
-  display: inline-block;
-  background: linear-gradient(top, #f9f9f9, #e3e3e3);
-  border: 1px solid #999;
-  border-radius: 3px;
-  padding: 5px 8px;
-  outline: none;
-  white-space: nowrap;
-  -webkit-user-select: none;
-  cursor: pointer;
-  text-shadow: 1px 1px #fff;
-  font-weight: 700;
-  font-size: 10pt;
-}
-.custom-file-input:hover::before {
-  border-color: black;
-}
-.custom-file-input:active::before {
-  background: -webkit-linear-gradient(top, #e3e3e3, #f9f9f9);
-}
-
-/*----------------------------------------------------------------*/
-.input-file {
-	width: 0.1px;
-	height: 0.1px;
-	opacity: 0;
-	overflow: hidden;
-	position: absolute;
-	z-index: -1;
-}
-.input-file + label {
-    font-size: 1.25em;
-    font-weight: 700;
-    color: white;
-    background-color: black;
-    display: inline-block;
-}
-.input-file:focus + label,
-.input-file + label:hover {
-    background-color: red;
-}
-.input-file + label {
-	cursor: pointer; /* "hand" cursor */
-}
-/*.input-file:focus + label {*/
-/*	outline: 1px dotted #000;*/
-/*	outline: -webkit-focus-ring-color auto 5px;*/
+/*.custom-file-input::-webkit-file-upload-button {*/
+/*  visibility: hidden;*/
 /*}*/
-.input-file + label * {
-	pointer-events: none;
-}
+
+/*.custom-file-input::before {*/
+/*  margin:20px 0;*/
+/*  content: 'Select some files';*/
+/*  display: inline-block;*/
+/*  background: linear-gradient(top, #f9f9f9, #e3e3e3);*/
+/*  border: 1px solid #999;*/
+/*  border-radius: 3px;*/
+/*  padding: 5px 8px;*/
+/*  outline: none;*/
+/*  white-space: nowrap;*/
+/*  -webkit-user-select: none;*/
+/*  cursor: pointer;*/
+/*  text-shadow: 1px 1px #fff;*/
+/*  font-weight: 700;*/
+/*  font-size: 10pt;*/
+/*}*/
+/*.custom-file-input:hover::before {*/
+/*  border-color: black;*/
+/*}*/
+/*.custom-file-input:active::before {*/
+/*  background: -webkit-linear-gradient(top, #e3e3e3, #f9f9f9);*/
+/*}*/
+
+/*!*----------------------------------------------------------------*!*/
+/*.input-file {*/
+/*	width: 0.1px;*/
+/*	height: 0.1px;*/
+/*	opacity: 0;*/
+/*	overflow: hidden;*/
+/*	position: absolute;*/
+/*	z-index: -1;*/
+/*}*/
+/*.input-file + label {*/
+/*    font-size: 1.25em;*/
+/*    font-weight: 700;*/
+/*    color: white;*/
+/*    background-color: black;*/
+/*    display: inline-block;*/
+/*}*/
+/*.input-file:focus + label,*/
+/*.input-file + label:hover {*/
+/*    background-color: red;*/
+/*}*/
+/*.input-file + label {*/
+/*	cursor: pointer; !* "hand" cursor *!*/
+/*}*/
+/*!*.input-file:focus + label {*!*/
+/*!*	outline: 1px dotted #000;*!*/
+/*!*	outline: -webkit-focus-ring-color auto 5px;*!*/
+/*!*}*!*/
+/*.input-file + label * {*/
+/*	pointer-events: none;*/
+/*}*/

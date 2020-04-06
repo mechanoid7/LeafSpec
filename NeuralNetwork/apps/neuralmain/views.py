@@ -77,7 +77,7 @@ def main(request):
             data_to_page['message'] = "Успешно"
         else:
             form = PhotoRequestForm()
-            data_to_page['message'] = "Файл не может быть больше 20мб."
+            data_to_page['error'] = "Файл не может быть больше 20мб."
             print("Uploaded file: '"+uploaded_file.name+"' big, not saved")
     else:
         form = PhotoRequestForm()
@@ -85,21 +85,21 @@ def main(request):
     return render(request, "website/main.html", data_to_page)
 
 
-def main_else(request):
-    data_to_page = {}
-    if request.method == 'POST':
-        post = copy.deepcopy(request.POST)  # make request copy and change data
-        post['photo_date'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # set current time
-        post['photo_name'] = post['photo_group'] + '_' + str(post['photo_date'])  # name=group+time
-        request.POST = post  # update request for database
-        form = PhotoToDatabaseForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            # return redirect('upload')  # update page
-    else:
-        form = PhotoRequestForm()
-    data_to_page['form'] = form
-    return render(request, "website/main.html", data_to_page)
+# def main_else(request):
+#     data_to_page = {}
+#     if request.method == 'POST':
+#         post = copy.deepcopy(request.POST)  # make request copy and change data
+#         post['photo_date'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # set current time
+#         post['photo_name'] = post['photo_group'] + '_' + str(post['photo_date'])  # name=group+time
+#         request.POST = post  # update request for database
+#         form = PhotoToDatabaseForm(request.POST, request.FILES)
+#         if form.is_valid():
+#             form.save()
+#             # return redirect('upload')  # update page
+#     else:
+#         form = PhotoRequestForm()
+#     data_to_page['form'] = form
+#     return render(request, "website/main.html", data_to_page)
 
 
 
@@ -124,7 +124,8 @@ def upload(request):
         form = PhotoToDatabaseForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
-            return redirect('upload')  # update page
+            data_to_page['message'] = 'Спасибо за помощь проекту.'
+            # return redirect('upload')  # update page
     else:
         form = PhotoToDatabaseForm()
     data_to_page['form'] = form
