@@ -12,6 +12,7 @@
         {% csrf_token %}
         <h1 class="H1">Мы попробуем опознать ваше растение.</h1>
         <h2 class="H2">Загрузите фото в форму ниже.<br/>Загружайте фотографию всего листа растения, держа лист вертикально и в фокусе.</h2>
+        <div style="margin-bottom: 30px">
         {% if error %}
             <div class="err">
                 <p>{{ error }}</p>
@@ -23,10 +24,11 @@
                 </div>
             {% endif %}
         {% endif %}
-        <span class="main-page">
-            <div class="main-page-obj" style="margin-top: 10%">{{ form.photo_file }}</div>
+        </div>
+        <div class="main-page" style="margin-top: 30pt">
+            <div class="main-page-obj" >{{ form.photo_file }}</div>
             <button class="but-submit" style="width: 300px">Проверить!</button>
-        </span>
+        </div>
 
     </form>
 {% endblock %}
