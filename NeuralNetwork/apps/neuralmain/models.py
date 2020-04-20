@@ -9,6 +9,12 @@ def get_photo_group(self):
     return re.sub("\W+" , "", self.photo_group.lower())
 
 
+class Contacts(models.Model):
+    user_email = models.EmailField("Емаил пользователя")
+    message_field = models.TextField("Сообщение", max_length=500)
+    author_ip = models.GenericIPAddressField("ip адресс пользователя", default='0.0.0.0')
+
+
 class PhotoRequest(models.Model):
     photo_name = models.CharField("Имя фотографии", max_length=50, default='')
     photo_date = models.DateTimeField("Дата загрузки фото", default=datetime.now())

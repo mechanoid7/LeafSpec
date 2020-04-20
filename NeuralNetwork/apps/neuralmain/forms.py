@@ -1,19 +1,20 @@
 from django import forms
-from .models import PhotoToDatabase, PhotoRequest
-
-
-# class UploadFileForm(forms.Form):
-#     title = forms.CharField(max_length=50)
-#     file = forms.FileField()
+from .models import PhotoToDatabase, PhotoRequest, Contacts
 
 
 class PhotoToDatabaseForm(forms.ModelForm):
     class Meta:
         model = PhotoToDatabase
-        fields = ('photo_author', 'photo_group', 'photo_file', 'photo_author_ip', 'photo_name', 'photo_date')  # , 'photo_author_ip', 'photo_name',        #'photo_date'
+        fields = ('photo_author', 'photo_group', 'photo_file', 'photo_author_ip', 'photo_name', 'photo_date')
 
 
 class PhotoRequestForm(forms.ModelForm):
     class Meta:
         model = PhotoRequest
         fields = ('photo_file', 'photo_date')
+
+
+class ContactsForm(forms.ModelForm):
+    class Meta:
+        model = Contacts
+        fields = ('user_email', 'message_field', 'author_ip')
