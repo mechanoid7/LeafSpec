@@ -1,0 +1,16 @@
+acacia
+apple
+apricot
+ash
+aspen
+beech
+birch
+cherry
+chestnut
+hazel
+linden
+maple
+merry
+oak
+spruce
+strawberry
