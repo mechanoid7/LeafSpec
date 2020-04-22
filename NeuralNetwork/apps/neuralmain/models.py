@@ -18,11 +18,6 @@ class PhotoRequest(models.Model):
     photo_file = models.ImageField("Файл изображения", upload_to="requests/")
 
 
-# class PhotoAnswer(models.Model):
-#     photo_name = models.CharField("Предположительный вид растения", max_length=200)
-#     photo_file = models.ImageField("Изображение предпологаемого вида")  # optional
-
-
 class PhotoToDatabase(models.Model):
     photo_name = models.CharField("Имя фотографии", max_length=60, default='')
     photo_author = models.CharField("Автор фотографии", max_length=50)

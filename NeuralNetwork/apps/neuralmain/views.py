@@ -4,7 +4,8 @@ from datetime import datetime
 from django.shortcuts import render, redirect
 from django.core.files.storage import FileSystemStorage
 from .forms import PhotoToDatabaseForm, PhotoRequestForm, ContactsForm, AuthForm
-from .admin import auth_data, relearning
+from .admin import auth_data
+from .tools.training import retrain_sys
 
 
 def main(request):
@@ -83,13 +84,16 @@ def auth(request):
                     data_to_page['message'] = 'Привет, хозяин!'
                 else:
                     data_to_page['message'] = 'Добро пожаловать на Leaf Spectator!'
-                print(f"    >>>User '{login}' logged in to the site.")
+                print(f">>> User '{login}' logged in to the site.")
             else:
                 data_to_page['error'] = 'Неверный логин или пароль.'
         else:
             if request.POST['access_field'].lower() == 'подтвердить':
-                relearning()  # вызов функции переобучения нейросети
-                data_to_page['message'] = 'Успешно, нейросеть переобучается. Это займёт некоторое время.'
+                answer_args = retrain_sys()  # вызов функции переобучения нейросети
+                if answer_args[0]:
+                    data_to_page['message'] = 'Успешно, нейросеть переобучается. Это займёт некоторое время.'
+                else:
+                    data_to_page['error'] = f'Тренировку системы можно будет запустить через {answer_args[1]:.2f} часа(-ов).'
 
             else:
                 data_to_page['error'] = 'Fatal Error, contact us to solve the problem.'
