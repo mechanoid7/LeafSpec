@@ -7,10 +7,24 @@ beech
 birch
 cherry
 chestnut
+corc oak
+daisy
+dandelion
 hazel
+juniper
+larch
 linden
 maple
 merry
+mulberry
 oak
+orange
+pine
+poplar
+raspberry
+rowan
 spruce
 strawberry
+viburnum
+walnut
+willow

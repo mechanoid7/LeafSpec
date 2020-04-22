@@ -3,11 +3,8 @@ from datetime import datetime
 
 from django.shortcuts import render, redirect
 from django.core.files.storage import FileSystemStorage
-from .forms import PhotoToDatabaseForm, PhotoRequestForm, ContactsForm
-
-
-# def contacts(request):
-#     return render(request, 'website/contacts.html', {})
+from .forms import PhotoToDatabaseForm, PhotoRequestForm, ContactsForm, AuthForm
+from .admin import auth_data, relearning
 
 
 def main(request):
@@ -72,7 +69,35 @@ def upload(request):
 
 
 def auth(request):
-    return render(request, 'website/auth.html', {})
+    form = {}
+    data_to_page = {}
+    if request.method == 'POST':
+        form = AuthForm(request.POST)
+        if form.is_valid():
+            login = request.POST['login_field']  # запись логина и пароля в переменные
+            password = request.POST['password_field']
+            if login in auth_data and password == auth_data[login]:  # если есть логин в списке и пароль к нему правильные - пользователь получает допуск
+                #easteregg
+                data_to_page['access'] = True
+                if login == 'mechanoid':  # особое сообщение для меня :3
+                    data_to_page['message'] = 'Привет, хозяин!'
+                else:
+                    data_to_page['message'] = 'Добро пожаловать на Leaf Spectator!'
+                print(f"    >>>User '{login}' logged in to the site.")
+            else:
+                data_to_page['error'] = 'Неверный логин или пароль.'
+        else:
+            if request.POST['access_field'].lower() == 'подтвердить':
+                relearning()  # вызов функции переобучения нейросети
+                data_to_page['message'] = 'Успешно, нейросеть переобучается. Это займёт некоторое время.'
+
+            else:
+                data_to_page['error'] = 'Fatal Error, contact us to solve the problem.'
+                form = AuthForm(request.POST)
+    else:
+        form = AuthForm()
+    data_to_page['form'] = form
+    return render(request, 'website/auth.html', data_to_page)  # {'form': form}
 
 
 def contacts(request):

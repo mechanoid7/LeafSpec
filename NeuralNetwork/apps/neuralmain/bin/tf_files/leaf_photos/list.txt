@@ -1,0 +1,37 @@
+ Том в устройстве F имеет метку Локальный диск
+ Серийный номер тома: 20B5-79AE
+
+ Содержимое папки F:\Projects\PyCharm\NeuralNetwork\NeuralNetwork\apps\neuralmain\bin\tf_files\leaf_photos
+
+21.04.2020  20:18    <DIR>          .
+21.04.2020  20:18    <DIR>          ..
+19.04.2020  20:49    <DIR>          acacia
+19.04.2020  20:49    <DIR>          apple
+19.04.2020  20:49    <DIR>          apricot
+19.04.2020  20:49    <DIR>          ash
+19.04.2020  20:49    <DIR>          aspen
+19.04.2020  20:49    <DIR>          beech
+19.04.2020  20:49    <DIR>          birch
+19.04.2020  20:49    <DIR>          cherry
+19.04.2020  20:49    <DIR>          chestnut
+19.04.2020  20:49    <DIR>          hazel
+21.04.2020  20:18    <DIR>          juniper
+05.03.2020  02:25    <DIR>          larch
+19.04.2020  20:49    <DIR>          linden
+21.04.2020  20:19                 0 list.txt
+19.04.2020  20:49    <DIR>          maple
+19.04.2020  20:49    <DIR>          merry
+05.03.2020  02:27    <DIR>          mulberry
+19.04.2020  20:49    <DIR>          oak
+05.03.2020  02:25    <DIR>          pine
+05.03.2020  02:23    <DIR>          poplar
+05.03.2020  02:24    <DIR>          raspberries
+05.03.2020  02:30    <DIR>          rowan
+05.03.2020  02:29    <DIR>          sallow
+19.04.2020  20:49    <DIR>          spruce
+19.04.2020  20:49    <DIR>          strawberry
+05.03.2020  02:27    <DIR>          velvetTree
+05.03.2020  02:24    <DIR>          viburnum
+05.03.2020  02:29    <DIR>          walnut
+               1 файлов              0 байт
+              29 папок  219 822 051 328 байт свободно
