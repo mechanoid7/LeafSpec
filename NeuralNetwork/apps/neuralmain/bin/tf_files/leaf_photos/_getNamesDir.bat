@@ -1,0 +1,1 @@
+dir /B /D > _dirs.leafsp

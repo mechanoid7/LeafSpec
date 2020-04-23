@@ -7,10 +7,10 @@ beech
 birch
 cherry
 chestnut
-corc oak
+cork oak
 daisy
 dandelion
-hazel
+hazelnut
 juniper
 larch
 linden

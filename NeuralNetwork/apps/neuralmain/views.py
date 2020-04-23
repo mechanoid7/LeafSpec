@@ -6,6 +6,7 @@ from django.core.files.storage import FileSystemStorage
 from .forms import PhotoToDatabaseForm, PhotoRequestForm, ContactsForm, AuthForm
 from .admin import auth_data
 from .tools.training import retrain_sys
+from .tools.analyze_img import detect_image
 
 
 def main(request):
@@ -25,7 +26,8 @@ def main(request):
             name = fs.save("requests\\" + uploaded_file.name, uploaded_file)  # BASE_DIR_DATA_REQUESTS+"\\"+
             url = fs.url(name)
             form = PhotoRequestForm(request.POST, request.FILES)
-            data_to_page['message'] = "Успешно"
+            # data_to_page['message'] = "Успешно"
+            data_to_page['message'] = detect_image(url)
         else:
             form = PhotoRequestForm()
             data_to_page['error'] = "Файл не может быть больше 20мб."
