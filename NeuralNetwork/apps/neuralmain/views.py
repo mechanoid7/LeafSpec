@@ -7,6 +7,7 @@ from .forms import PhotoToDatabaseForm, PhotoRequestForm, ContactsForm, AuthForm
 from .admin import auth_data
 from .tools.training import retrain_sys
 from .tools.analyze_img import detect_image
+from .tools.file_manipulator import check_file_name, check_filename_extension, delete_file
 
 
 def main(request):
@@ -19,15 +20,26 @@ def main(request):
     if request.method == "POST":
         uploaded_file = request.FILES['photo_file']
         # uploaded_file = request.FILES.get('photo_file', False)
-        print(str(uploaded_file))
+        # print(str(uploaded_file))
         if not uploaded_file.multiple_chunks(chunk_size=20971520):  # 20 MB
             file = uploaded_file.read()
             fs = FileSystemStorage()
+
+            uploaded_file.name = check_file_name(uploaded_file.name)
             name = fs.save("requests\\" + uploaded_file.name, uploaded_file)  # BASE_DIR_DATA_REQUESTS+"\\"+
             url = fs.url(name)
             form = PhotoRequestForm(request.POST, request.FILES)
-            # data_to_page['message'] = "Успешно"
-            data_to_page['message'] = detect_image(url)
+
+            if check_filename_extension(uploaded_file.name):
+                data_to_page['error'] = 'Неверный формат файла.'
+            else:
+                try:
+                    data_to_page['message'] = detect_image(url)
+                except Exception:
+                    data_to_page['error'] = 'Невозможно распознать файл, Файл повреждён или неизвестен.'
+                    delete_file(url)
+
+
         else:
             form = PhotoRequestForm()
             data_to_page['error'] = "Файл не может быть больше 20мб."
