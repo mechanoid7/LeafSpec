@@ -1,3 +1,3 @@
-#2020-04-23 22:06:34
+#2020-05-08 13:46:46
 python.exe F:\Projects\PyCharm\NeuralNetwork\NeuralNetwork\apps\neuralmain\bin\scripts\retrain.py --output_graph=F:\Projects\PyCharm\NeuralNetwork\NeuralNetwork\apps\neuralmain\bin\tf_files\retrained_graph.pb --output_labels=F:\Projects\PyCharm\NeuralNetwork\NeuralNetwork\apps\neuralmain\bin\tf_files\retrained_labels.txt --image_dir=F:\Projects\PyCharm\NeuralNetwork\NeuralNetwork\apps\neuralmain\bin\tf_files\leaf_photos
-Start-Sleep -Seconds 300
+Sleep -Seconds 300

@@ -1,4 +1,5 @@
 __pycache__/
 venv/
 .idea/
+NeuralNetwork/apps/neuralmain/bin/tf_files/leaf_photos
 kanban.XLSX

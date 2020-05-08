@@ -6,6 +6,7 @@ translate_dict = {
     'aspen': 'осина',
     'beech': 'бук',
     'birch': 'береза',
+    'cactus': 'кактус',
     'cherry': 'вишня',
     'chestnut': 'каштан',
     'cork_oak': 'пробковый дуб',
@@ -30,3 +31,5 @@ translate_dict = {
     'walnut': 'грецкий орех',
     'willow': 'ива',
 }
+
+

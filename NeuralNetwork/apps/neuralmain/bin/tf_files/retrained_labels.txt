@@ -5,17 +5,22 @@ ash
 aspen
 beech
 birch
+cactus
+census
 cherry
 chestnut
+clover
 cork oak
 daisy
 dandelion
 hazelnut
+hemp
 juniper
 larch
 linden
 maple
 merry
+monstera
 mulberry
 oak
 orange
@@ -25,6 +30,7 @@ raspberry
 rowan
 spruce
 strawberry
+sunflower
 viburnum
 walnut
 willow
