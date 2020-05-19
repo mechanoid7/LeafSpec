@@ -1,7 +1,8 @@
+"""NeuralMain app logic. Each function is responsible for one page."""
 import copy
 from datetime import datetime
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.core.files.storage import FileSystemStorage
 from .forms import PhotoToDatabaseForm, PhotoRequestForm, ContactsForm, AuthForm
 from .admin import auth_data
@@ -11,18 +12,22 @@ from .tools.file_manipulator import check_file_name, check_filename_extension, d
 
 
 def main(request):
+    """ Function main page. Process uploaded image and defines a type of plant. And save request object to DB.
+        >>object of PhotoRequest(see item neuralmain/models)
+        :data_to_page: data that is sent to the page for output to the user (Error/success msg. Success mgs have info about type of plant(-s).)
+        :uploaded_file: user img file
+        :returns: error or image plant information.
+    """
     # BASE_DIR_DATA_REQUESTS = BASE_DIR+"_Data\\requests" - DISABLED
     # current path: media/requests/
     data_to_page = {}
 
     uploaded_file = None
-    file = None
     if request.method == "POST":
         uploaded_file = request.FILES['photo_file']
         # uploaded_file = request.FILES.get('photo_file', False)
         # print(str(uploaded_file))
         if not uploaded_file.multiple_chunks(chunk_size=20971520):  # 20 MB
-            file = uploaded_file.read()
             fs = FileSystemStorage()
 
             uploaded_file.name = check_file_name(uploaded_file.name)
@@ -39,11 +44,10 @@ def main(request):
                     data_to_page['error'] = 'Невозможно распознать файл, Файл повреждён или неизвестен.'
                     delete_file(url)
 
-
         else:
             form = PhotoRequestForm()
             data_to_page['error'] = "Файл не может быть больше 20мб."
-            print("Uploaded file: '"+uploaded_file.name+"' big, not saved")
+            print(f"Uploaded file: '{uploaded_file.name}' big, not saved")
     else:
         form = PhotoRequestForm()
     data_to_page['form'] = form
@@ -51,20 +55,25 @@ def main(request):
 
 
 def upload(request):
-    form = {}
+    """ Function upload page. Save upload object to DB.
+        >>object of PhotoToDatabase(see item neuralmain/models)
+        :uploaded_file: user img file
+        :data_to_page: data that is sent to the page for output to the user (Error/success msg. Success mgs have success text.)
+        :returns:error or success message.
+    """
     data_to_page = {}
     if request.method == 'POST':
         uploaded_file = request.FILES['photo_file']
         # print(str(uploaded_file))
         if not uploaded_file.multiple_chunks(chunk_size=20971520):  # 20 MB
-            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')  # take ip adress user
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')  # take ip address user
             if x_forwarded_for:
                 ipaddress = x_forwarded_for.split(',')[-1].strip()
             else:
                 ipaddress = request.META.get('REMOTE_ADDR')
 
             post = copy.deepcopy(request.POST)  # make request copy and change data
-            post['photo_author_ip'] = ipaddress  # set ip adress
+            post['photo_author_ip'] = ipaddress  # set ip address
             post['photo_date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # set current time
             post['photo_name'] = uploaded_file.name  # name=group+time
             request.POST = copy.deepcopy(post)  # update request for database
@@ -84,7 +93,12 @@ def upload(request):
 
 
 def auth(request):
-    form = {}
+    """ Function auth page. Gives access to start relearn system.
+        >>object of Auth(see item neuralmain/models)
+        If login and password field is correct - show button to relearn.
+        :data_to_page: data that is sent to the page for output to the user (Error/success msg. Success mgs have success text.)
+        :returns:login error or site access.
+    """
     data_to_page = {}
     if request.method == 'POST':
         form = AuthForm(request.POST)
@@ -119,17 +133,22 @@ def auth(request):
 
 
 def contacts(request):
-    form = {}
+    """ Function Contacts page. Ability to communicate with the administrator / moderator.
+        >>object of Contacts(see item neuralmain/models)
+        If the fields  are valid - save letter to DB.
+        data_to_page: data that is sent to the page for output to the user (Error/success msg. Success mgs have success text.)
+        :returns:error or success message.
+    """
     data_to_page = {}
     if request.method == 'POST':
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')  # take ip adress user
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')  # take ip address user
         if x_forwarded_for:
             ipaddress = x_forwarded_for.split(',')[-1].strip()
         else:
             ipaddress = request.META.get('REMOTE_ADDR')
 
         post_copy = copy.deepcopy(request.POST)  # make request copy and change data
-        post_copy['author_ip'] = ipaddress  # set ip adress
+        post_copy['author_ip'] = ipaddress  # set ip address
         request.POST = copy.deepcopy(post_copy)  # update request for database
 
         form = ContactsForm(request.POST)
@@ -147,5 +166,6 @@ def contacts(request):
 
 
 def pattern(request):
+    """ Function pattern page. If current mode is Debug: load clear pattern page. """
     return render(request, 'website/pattern.html')
 

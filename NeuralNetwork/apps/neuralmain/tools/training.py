@@ -1,10 +1,24 @@
+"""This module have func to retrain system
+
+:Date: 24-04-2020
+:Version: Beta
+:Authors:
+    - Mechanoid
+"""
+
 import pathlib
 import datetime
 import os
 
 
 def delta_datetime(datetime_old_get):
-    """Get str from file and find for time difference(in second)"""
+    """Get str from file and find for time difference(in second)
+
+    - Parameters:
+        :param datetime_old_get(datetime str): time of last retraining
+    - Returns:
+        :delta(int): difference of now and old datetime in seconds
+    """
     datetime_old = str(datetime_old_get).replace('#', '').replace('\n', '')  # delete '\n' and '#' from str
     datetime_now = datetime.datetime.now()  # take current datetime
     datetime_old = datetime.datetime.strptime(datetime_old, '%Y-%m-%d %H:%M:%S')  # convert str to <datetime> object
@@ -15,8 +29,12 @@ def delta_datetime(datetime_old_get):
 
 
 def retrain_sys():
-    """ This function try retrain system, sys cannot retrain if  not enough time has passed """
+    """ This function try retrain system, sys cannot retrain if  not enough time has passed.
+    The time limit between retraining is made for the correct operation of the system.
 
+    - Returns:
+        :return_arg(list): [True] if retrain successful, else [False, *time to retrain(in hour)*]
+    """
     bin_path = str(pathlib.Path(__file__).parent.absolute()).replace('tools', '') +'bin\\'  # path to 'bin' dir
     ps1_path = bin_path +'ReLearningSystem.ps1'
 

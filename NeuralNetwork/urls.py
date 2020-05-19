@@ -25,4 +25,5 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
+    """If Debug mode available, get access to media folder from site"""
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

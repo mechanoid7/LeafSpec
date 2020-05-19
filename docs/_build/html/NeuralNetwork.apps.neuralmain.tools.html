@@ -1,0 +1,445 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>NeuralNetwork.apps.neuralmain.tools package &#8212; LeafSpec beta documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="manage module" href="manage.html" />
+    <link rel="prev" title="NeuralNetwork.apps.neuralmain.migrations package" href="NeuralNetwork.apps.neuralmain.migrations.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="neuralnetwork-apps-neuralmain-tools-package">
+<h1>NeuralNetwork.apps.neuralmain.tools package<a class="headerlink" href="#neuralnetwork-apps-neuralmain-tools-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-NeuralNetwork.apps.neuralmain.tools.analyze_img">
+<span id="neuralnetwork-apps-neuralmain-tools-analyze-img-module"></span><h2>NeuralNetwork.apps.neuralmain.tools.analyze_img module<a class="headerlink" href="#module-NeuralNetwork.apps.neuralmain.tools.analyze_img" title="Permalink to this headline">¶</a></h2>
+<p>Image file analyse in this module</p>
+<dl class="field-list simple">
+<dt class="field-odd">Date</dt>
+<dd class="field-odd"><p>24-04-2020</p>
+</dd>
+<dt class="field-even">Version</dt>
+<dd class="field-even"><p>Beta</p>
+</dd>
+<dt class="field-odd">Authors</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>Mechanoid</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py function">
+<dt id="NeuralNetwork.apps.neuralmain.tools.analyze_img.compose_answer">
+<code class="sig-prename descclassname">NeuralNetwork.apps.neuralmain.tools.analyze_img.</code><code class="sig-name descname">compose_answer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">analyze_data</span></em>, <em class="sig-param"><span class="n">img_path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#NeuralNetwork.apps.neuralmain.tools.analyze_img.compose_answer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function analyse answer from TensorFlow and draws conclusions</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Parameters:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">analyze_data(list)</dt>
+<dd class="field-odd"><p>input two-dimensional array which has the appearance of a plant and a match rate</p>
+</dd>
+<dt class="field-even">img_path(str)</dt>
+<dd class="field-even"><p>path to img file</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Returns:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">return_data(str)</dt>
+<dd class="field-odd"><p>msg(possible plant type, chance) and file processing time</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt id="NeuralNetwork.apps.neuralmain.tools.analyze_img.detect_image">
+<code class="sig-prename descclassname">NeuralNetwork.apps.neuralmain.tools.analyze_img.</code><code class="sig-name descname">detect_image</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">img_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#NeuralNetwork.apps.neuralmain.tools.analyze_img.detect_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function processes and defines the plant in the photograph.</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Parameters:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">img_name(str)</dt>
+<dd class="field-odd"><p>name of img file</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Returns:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">return_data(str)</dt>
+<dd class="field-odd"><p>answer(message have type of plant and processing time)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt id="NeuralNetwork.apps.neuralmain.tools.analyze_img.move_to_dir">
+<code class="sig-prename descclassname">NeuralNetwork.apps.neuralmain.tools.analyze_img.</code><code class="sig-name descname">move_to_dir</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">plant_type</span></em>, <em class="sig-param"><span class="n">img_path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#NeuralNetwork.apps.neuralmain.tools.analyze_img.move_to_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function move image to request directory which has a name &lt;plant_type&gt; or create new dir and move</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Parameters:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">plant_type(str)</dt>
+<dd class="field-odd"><p>type of plant which should be used to dir name</p>
+</dd>
+<dt class="field-even">img_path(str)</dt>
+<dd class="field-even"><p>path to img file</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt id="NeuralNetwork.apps.neuralmain.tools.analyze_img.translate">
+<code class="sig-prename descclassname">NeuralNetwork.apps.neuralmain.tools.analyze_img.</code><code class="sig-name descname">translate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#NeuralNetwork.apps.neuralmain.tools.analyze_img.translate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function get dict from ‘plants_list.py’ -&gt; translate_dict. Search coincidences and translate ENG to RUS,
+else - leaves current name</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Parameters:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">name(str)</dt>
+<dd class="field-odd"><p>type of plant which should be translated</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Returns:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">translated_name(str)</dt>
+<dd class="field-odd"><p>if name exist - translated name, else - current name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+</div>
+<div class="section" id="module-NeuralNetwork.apps.neuralmain.tools.file_manipulator">
+<span id="neuralnetwork-apps-neuralmain-tools-file-manipulator-module"></span><h2>NeuralNetwork.apps.neuralmain.tools.file_manipulator module<a class="headerlink" href="#module-NeuralNetwork.apps.neuralmain.tools.file_manipulator" title="Permalink to this headline">¶</a></h2>
+<p>This module makes it possible to check file extension and name, delete file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Date</dt>
+<dd class="field-odd"><p>24-04-2020</p>
+</dd>
+<dt class="field-even">Version</dt>
+<dd class="field-even"><p>Beta</p>
+</dd>
+<dt class="field-odd">Authors</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>Mechanoid</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py function">
+<dt id="NeuralNetwork.apps.neuralmain.tools.file_manipulator.check_file_name">
+<code class="sig-prename descclassname">NeuralNetwork.apps.neuralmain.tools.file_manipulator.</code><code class="sig-name descname">check_file_name</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#NeuralNetwork.apps.neuralmain.tools.file_manipulator.check_file_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function reformat file name if these is invalid</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Parameters:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">file_name(str)</dt>
+<dd class="field-odd"><p>file name which should be processed if such a name is already in the media folder</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Returns:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">file_name(str)</dt>
+<dd class="field-odd"><p>reformatted file name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt id="NeuralNetwork.apps.neuralmain.tools.file_manipulator.check_filename_extension">
+<code class="sig-prename descclassname">NeuralNetwork.apps.neuralmain.tools.file_manipulator.</code><code class="sig-name descname">check_filename_extension</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#NeuralNetwork.apps.neuralmain.tools.file_manipulator.check_filename_extension" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function check forbidden extensions and return False if extension allow</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Parameters:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">file_name(str)</dt>
+<dd class="field-odd"><p>file name which should be checked for possible malicious content.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Returns:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">return_data(bool)</dt>
+<dd class="field-odd"><p>bool False if file clear. Otherwise True.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt id="NeuralNetwork.apps.neuralmain.tools.file_manipulator.delete_file">
+<code class="sig-prename descclassname">NeuralNetwork.apps.neuralmain.tools.file_manipulator.</code><code class="sig-name descname">delete_file</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file_path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#NeuralNetwork.apps.neuralmain.tools.file_manipulator.delete_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function try delete file from media</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Parameters:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">file_path(str)</dt>
+<dd class="field-odd"><p>path to file which should do deleted</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+</div>
+<div class="section" id="module-NeuralNetwork.apps.neuralmain.tools.plants_list">
+<span id="neuralnetwork-apps-neuralmain-tools-plants-list-module"></span><h2>NeuralNetwork.apps.neuralmain.tools.plants_list module<a class="headerlink" href="#module-NeuralNetwork.apps.neuralmain.tools.plants_list" title="Permalink to this headline">¶</a></h2>
+<p>Dict of ENG:RUS plants name</p>
+<dl class="field-list simple">
+<dt class="field-odd">Date</dt>
+<dd class="field-odd"><p>08-05-2020</p>
+</dd>
+<dt class="field-even">Version</dt>
+<dd class="field-even"><p>Beta</p>
+</dd>
+<dt class="field-odd">Authors</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>Mechanoid</p></li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="section" id="module-NeuralNetwork.apps.neuralmain.tools.training">
+<span id="neuralnetwork-apps-neuralmain-tools-training-module"></span><h2>NeuralNetwork.apps.neuralmain.tools.training module<a class="headerlink" href="#module-NeuralNetwork.apps.neuralmain.tools.training" title="Permalink to this headline">¶</a></h2>
+<p>This module have func to retrain system</p>
+<dl class="field-list simple">
+<dt class="field-odd">Date</dt>
+<dd class="field-odd"><p>24-04-2020</p>
+</dd>
+<dt class="field-even">Version</dt>
+<dd class="field-even"><p>Beta</p>
+</dd>
+<dt class="field-odd">Authors</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p>Mechanoid</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py function">
+<dt id="NeuralNetwork.apps.neuralmain.tools.training.delta_datetime">
+<code class="sig-prename descclassname">NeuralNetwork.apps.neuralmain.tools.training.</code><code class="sig-name descname">delta_datetime</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">datetime_old_get</span></em><span class="sig-paren">)</span><a class="headerlink" href="#NeuralNetwork.apps.neuralmain.tools.training.delta_datetime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get str from file and find for time difference(in second)</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Parameters:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">param datetime_old_get(datetime str)</dt>
+<dd class="field-odd"><p>time of last retraining</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Returns:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">delta(int)</dt>
+<dd class="field-odd"><p>difference of now and old datetime in seconds</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt id="NeuralNetwork.apps.neuralmain.tools.training.retrain_sys">
+<code class="sig-prename descclassname">NeuralNetwork.apps.neuralmain.tools.training.</code><code class="sig-name descname">retrain_sys</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#NeuralNetwork.apps.neuralmain.tools.training.retrain_sys" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function try retrain system, sys cannot retrain if  not enough time has passed.
+The time limit between retraining is made for the correct operation of the system.</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Returns:</dt><dd><dl class="field-list simple">
+<dt class="field-odd">return_arg(list)</dt>
+<dd class="field-odd"><p>[True] if retrain successful, else [False, <em>time to retrain(in hour)</em>]</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+</div>
+<div class="section" id="module-NeuralNetwork.apps.neuralmain.tools">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-NeuralNetwork.apps.neuralmain.tools" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">LeafSpec</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">NeuralNetwork</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="NeuralNetwork.html">NeuralNetwork package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="NeuralNetwork.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="NeuralNetwork.apps.html">NeuralNetwork.apps package</a><ul class="current">
+<li class="toctree-l5 current"><a class="reference internal" href="NeuralNetwork.apps.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l6 current"><a class="reference internal" href="NeuralNetwork.apps.neuralmain.html">NeuralNetwork.apps.neuralmain package</a><ul class="current">
+<li class="toctree-l7 current"><a class="reference internal" href="NeuralNetwork.apps.neuralmain.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l8"><a class="reference internal" href="NeuralNetwork.apps.neuralmain.migrations.html">NeuralNetwork.apps.neuralmain.migrations package</a></li>
+<li class="toctree-l8 current"><a class="current reference internal" href="#">NeuralNetwork.apps.neuralmain.tools package</a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="NeuralNetwork.apps.neuralmain.html#submodules">Submodules</a></li>
+<li class="toctree-l7"><a class="reference internal" href="NeuralNetwork.apps.neuralmain.html#neuralnetwork-apps-neuralmain-admin-module">NeuralNetwork.apps.neuralmain.admin module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="NeuralNetwork.apps.neuralmain.html#neuralnetwork-apps-neuralmain-apps-module">NeuralNetwork.apps.neuralmain.apps module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="NeuralNetwork.apps.neuralmain.html#neuralnetwork-apps-neuralmain-forms-module">NeuralNetwork.apps.neuralmain.forms module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="NeuralNetwork.apps.neuralmain.html#neuralnetwork-apps-neuralmain-models-module">NeuralNetwork.apps.neuralmain.models module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="NeuralNetwork.apps.neuralmain.html#neuralnetwork-apps-neuralmain-tests-module">NeuralNetwork.apps.neuralmain.tests module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="NeuralNetwork.apps.neuralmain.html#neuralnetwork-apps-neuralmain-urls-module">NeuralNetwork.apps.neuralmain.urls module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="NeuralNetwork.apps.neuralmain.html#neuralnetwork-apps-neuralmain-views-module">NeuralNetwork.apps.neuralmain.views module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="NeuralNetwork.apps.neuralmain.html#module-NeuralNetwork.apps.neuralmain">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="NeuralNetwork.apps.html#module-NeuralNetwork.apps">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="NeuralNetwork.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="NeuralNetwork.html#neuralnetwork-asgi-module">NeuralNetwork.asgi module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="NeuralNetwork.html#module-NeuralNetwork.settings">NeuralNetwork.settings module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="NeuralNetwork.html#neuralnetwork-urls-module">NeuralNetwork.urls module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="NeuralNetwork.html#neuralnetwork-wsgi-module">NeuralNetwork.wsgi module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="NeuralNetwork.html#module-NeuralNetwork">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="manage.html">manage module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="templates.html">templates package</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">NeuralNetwork</a><ul>
+  <li><a href="NeuralNetwork.html">NeuralNetwork package</a><ul>
+  <li><a href="NeuralNetwork.apps.html">NeuralNetwork.apps package</a><ul>
+  <li><a href="NeuralNetwork.apps.neuralmain.html">NeuralNetwork.apps.neuralmain package</a><ul>
+      <li>Previous: <a href="NeuralNetwork.apps.neuralmain.migrations.html" title="previous chapter">NeuralNetwork.apps.neuralmain.migrations package</a></li>
+      <li>Next: <a href="manage.html" title="next chapter">manage module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Mechanoid.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/NeuralNetwork.apps.neuralmain.tools.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

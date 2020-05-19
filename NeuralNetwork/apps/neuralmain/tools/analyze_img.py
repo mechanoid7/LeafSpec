@@ -1,3 +1,11 @@
+"""Image file analyse in this module
+
+:Date: 24-04-2020
+:Version: Beta
+:Authors:
+    - Mechanoid
+"""
+
 import os
 import pathlib
 import shutil
@@ -6,10 +14,16 @@ from .plants_list import translate_dict
 
 
 def move_to_dir(plant_type, img_path):
-    """ This function move image to directory which has a name <plant_type> or create new der and move"""
+    """ This function move image to request directory which has a name <plant_type> or create new dir and move
+
+    - Parameters:
+        :plant_type(str): type of plant which should be used to dir name
+        :img_path(str): path to img file
+
+    """
     requests_path = str(pathlib.Path(__file__).parent.absolute()).replace('NeuralNetwork\\apps\\neuralmain\\tools', '') \
                     + 'media\\requests\\'  # path to requests
-    plant_dir_path = requests_path + str(plant_type)  # path to pequests\<plant_type>
+    plant_dir_path = requests_path + str(plant_type)  # path to requests\<plant_type>
     if os.path.isdir(plant_dir_path):  # if the folder exists
         shutil.move(img_path, plant_dir_path)  # image move
     else:
@@ -19,8 +33,14 @@ def move_to_dir(plant_type, img_path):
 
 def translate(name):
     """ Function get dict from 'plants_list.py' -> translate_dict. Search coincidences and translate ENG to RUS,
-    else - leaves current name """
+    else - leaves current name
 
+    - Parameters:
+        :name(str): type of plant which should be translated
+
+    - Returns:
+        :translated_name(str): if name exist - translated name, else - current name
+    """
     try:
         translated_name = translate_dict[name]  # try get RUS name from dict[key]
     except Exception:
@@ -29,8 +49,14 @@ def translate(name):
 
 
 def compose_answer(analyze_data, img_path):
-    """ This function analyse answer from TensorFlow and draws conclusions """
+    """ Function analyse answer from TensorFlow and draws conclusions
 
+    - Parameters:
+        :analyze_data(list): input two-dimensional array which has the appearance of a plant and a match rate
+        :img_path(str): path to img file
+    - Returns:
+        :return_data(str): msg(possible plant type, chance) and file processing time
+    """
     # in RELEASE delete - > {analyze_data[1][1]:.2f}
     return_data = f''  # it`s a 'Answer' variable
     if analyze_data[1][1] > 0.9:
@@ -51,13 +77,19 @@ def compose_answer(analyze_data, img_path):
     else:
         move_to_dir('trash', img_path)  # if chance < 0.6(60%) move file to trash box
 
-
     return_data += f' Время выполнения: {analyze_data[0]}. '
 
     return return_data
 
 
 def detect_image(img_name):
+    """ Function processes and defines the plant in the photograph.
+
+    - Parameters:
+        :img_name(str): name of img file
+    - Returns:
+        :return_data(str): answer(message have type of plant and processing time)
+    """
     img_path = str(pathlib.Path(__file__).parent.absolute()).replace('\\NeuralNetwork\\apps\\neuralmain\\tools', '')\
                + str(img_name).replace('/', '\\')  # set path to IMAGE in requests
     # print('>>>IMG_PATH:', img_path)

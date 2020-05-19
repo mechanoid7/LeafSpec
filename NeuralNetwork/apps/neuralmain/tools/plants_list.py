@@ -1,3 +1,11 @@
+"""Dict of ENG:RUS plants name
+
+:Date: 08-05-2020
+:Version: Beta
+:Authors:
+    - Mechanoid
+"""
+
 translate_dict = {
     'acacia': 'акация',
     'apple': 'яблоко',

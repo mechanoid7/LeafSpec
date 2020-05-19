@@ -1,3 +1,11 @@
+""" This module makes it possible to check file extension and name, delete file
+
+:Date: 24-04-2020
+:Version: Beta
+:Authors:
+    - Mechanoid
+"""
+
 import pathlib
 import re, os
 from random import choice
@@ -5,7 +13,13 @@ from string import ascii_letters
 
 
 def check_file_name(file_name):
-    """ This function reformat file name if these is invalid """
+    """This function reformat file name if these is invalid
+
+    - Parameters:
+        :file_name(str): file name which should be processed if such a name is already in the media folder
+    - Returns:
+        :file_name(str): reformatted file name
+    """
 
     file_name_splitted = str(file_name).rsplit('.', 1)  # get massive [name, extension]
     file_name = file_name_splitted[0]  # set name
@@ -19,11 +33,19 @@ def check_file_name(file_name):
 
 
 def check_filename_extension(file_name):
-    """ This function check forbidden extensions and return False if extension allow """
+    """This function check forbidden extensions and return False if extension allow
+
+    - Parameters:
+        :file_name(str): file name which should be checked for possible malicious content.
+    - Returns:
+        :return_data(bool): bool False if file clear. Otherwise True.
+    """
+
     return_data = False
     try:
         extension = str(file_name).split('.')[-1]  # get extension
-        extension_list = ['exe', 'msi', 'bat', 'apk', 'py', 'bin', 'cmd', 'jar', 'ps1', 'msu', 'wsf', 'cgi', 'com', 'gadget', 'reg']  # list forbidden extensions
+        extension_list = ['exe', 'msi', 'bat', 'apk', 'py', 'bin', 'cmd', 'jar', 'ps1', 'msu', 'wsf', 'cgi', 'com',
+                          'gadget', 'reg']  # list forbidden extensions
         if extension.lower() in extension_list:  # check
             return_data = True
     except Exception:
@@ -33,9 +55,15 @@ def check_filename_extension(file_name):
 
 
 def delete_file(file_path):
-    """ This function try delete file from media """
+    """This function try delete file from media
+
+    - Parameters:
+        :file_path(str): path to file which should do deleted
+    """
+
     try:
-        full_path = str(pathlib.Path(__file__).parent.absolute()).replace('\\NeuralNetwork\\apps\\neuralmain\\tools', '') + str(file_path).replace('/', '\\')
+        full_path = str(pathlib.Path(__file__).parent.absolute()).replace('\\NeuralNetwork\\apps\\neuralmain\\tools',
+                                                                          '') + str(file_path).replace('/', '\\')
         os.remove(full_path)  # remove file
     except Exception:
         pass

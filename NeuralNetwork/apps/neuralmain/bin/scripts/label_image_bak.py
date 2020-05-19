@@ -25,6 +25,10 @@ import numpy as np
 import tensorflow as tf
 
 def load_graph(model_file):
+  """
+  Args:
+      model_file:
+  """
   graph = tf.Graph()
   graph_def = tf.GraphDef()
 
@@ -37,6 +41,14 @@ def load_graph(model_file):
 
 def read_tensor_from_image_file(file_name, input_height=299, input_width=299,
 				input_mean=0, input_std=255):
+  """
+  Args:
+      file_name:
+      input_height:
+      input_width:
+      input_mean:
+      input_std:
+  """
   input_name = "file_reader"
   output_name = "normalized"
   file_reader = tf.read_file(file_name, input_name)
@@ -61,6 +73,10 @@ def read_tensor_from_image_file(file_name, input_height=299, input_width=299,
   return result
 
 def load_labels(label_file):
+  """
+  Args:
+      label_file:
+  """
   label = []
   proto_as_ascii_lines = tf.gfile.GFile(label_file).readlines()
   for l in proto_as_ascii_lines:

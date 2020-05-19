@@ -1,15 +1,12 @@
+"""Admin panel settings and root const"""
 from django.contrib import admin
-from .models import PhotoRequest, PhotoToDatabase
-# from os import subprocess
-# import os
-# import pathlib
-# import datetime
-# Register your models here.
+from .models import PhotoRequest, PhotoToDatabase, Auth, Contacts
+
 
 admin.site.register(PhotoRequest)
-# admin.site.register(PhotoInDatabase)
 admin.site.register(PhotoToDatabase)
-# admin.site.register(PhotoAnswer)
+admin.site.register(Auth)
+admin.site.register(Contacts)
 
 auth_data = {
     'mechanoid': 'mechanoid',

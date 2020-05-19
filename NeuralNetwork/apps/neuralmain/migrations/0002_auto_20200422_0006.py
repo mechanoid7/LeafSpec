@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='photorequest',
             name='photo_date',
-            field=models.DateTimeField(default=datetime.datetime(2020, 4, 22, 0, 6, 46, 679559), verbose_name='Дата загрузки фото'),
+            field=models.DateTimeField(default=datetime.datetime(2020, 4, 22, 0, 6, 46, 679559), verbose_name='Р вЂќР В°РЎвЂљР В° Р В·Р В°Р С–РЎР‚РЎС“Р В·Р С”Р С‘ РЎвЂћР С•РЎвЂљР С•'),
         ),
     ]
