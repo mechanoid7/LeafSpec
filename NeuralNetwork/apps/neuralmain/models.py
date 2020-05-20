@@ -26,6 +26,10 @@ class PhotoRequest(models.Model):
     photo_date = models.DateTimeField("Дата загрузки фото", default=datetime.now())
     photo_file = models.ImageField("Файл изображения", upload_to="requests/")
 
+    def __str__(self):
+        """ Function return string: Photo name | datetime"""
+        return self.photo_name+"|"+str(self.photo_date)
+
 
 class PhotoToDatabase(models.Model):
     """ Model of the plant object sent to the database
