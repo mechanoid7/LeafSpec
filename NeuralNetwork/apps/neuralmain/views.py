@@ -13,10 +13,13 @@ from .tools.file_manipulator import check_file_name, check_filename_extension, d
 
 def main(request):
     """ Function main page. Process uploaded image and defines a type of plant. And save request object to DB.
-        >>object of PhotoRequest(see item neuralmain/models)
-        :data_to_page: data that is sent to the page for output to the user (Error/success msg. Success mgs have info about type of plant(-s).)
-        :uploaded_file: user img file
-        :returns: error or image plant information.
+    Object of PhotoRequest(see item neuralmain/models)
+    Parameters:
+        - :data_to_page: data that is sent to the page for output to the user (Error/success msg. Success mgs have info about type of plant(-s).)
+        - :uploaded_file: user img file
+
+    Returns:
+        - :data_to_page(list): error or image plant information.
     """
     # BASE_DIR_DATA_REQUESTS = BASE_DIR+"_Data\\requests" - DISABLED
     # current path: media/requests/
@@ -56,10 +59,13 @@ def main(request):
 
 def upload(request):
     """ Function upload page. Save upload object to DB.
-        >>object of PhotoToDatabase(see item neuralmain/models)
-        :uploaded_file: user img file
-        :data_to_page: data that is sent to the page for output to the user (Error/success msg. Success mgs have success text.)
-        :returns:error or success message.
+    Object of PhotoToDatabase(see item neuralmain/models)
+    Parameters:
+        - :uploaded_file(file): user img file
+        - :data_to_page(list): data that is sent to the page for output to the user (Error/success msg. Success mgs have success text.)
+
+    Returns:
+        - :data_to_page(list): error or success message.
     """
     data_to_page = {}
     if request.method == 'POST':
@@ -93,11 +99,13 @@ def upload(request):
 
 
 def auth(request):
-    """ Function auth page. Gives access to start relearn system.
-        >>object of Auth(see item neuralmain/models)
-        If login and password field is correct - show button to relearn.
-        :data_to_page: data that is sent to the page for output to the user (Error/success msg. Success mgs have success text.)
-        :returns:login error or site access.
+    """ Function auth page. Gives access to start relearn system. If login and password field is correct - show button to relearn.
+    Object of Auth(see item neuralmain/models)
+    Parameters:
+        - :data_to_page: data that is sent to the page for output to the user (Error/success msg. Success mgs have success text.)
+
+    Returns:
+        - :data_to_page(list):login error or site access.
     """
     data_to_page = {}
     if request.method == 'POST':
@@ -133,11 +141,13 @@ def auth(request):
 
 
 def contacts(request):
-    """ Function Contacts page. Ability to communicate with the administrator / moderator.
-        >>object of Contacts(see item neuralmain/models)
-        If the fields  are valid - save letter to DB.
-        data_to_page: data that is sent to the page for output to the user (Error/success msg. Success mgs have success text.)
-        :returns:error or success message.
+    """ Function Contacts page. Ability to communicate with the administrator / moderator. If the fields  are valid - save letter to DB.
+    Object of Contacts(see item neuralmain/models)
+    Parameters:
+        - :data_to_page(list): data that is sent to the page for output to the user (Error/success msg. Success mgs have success text.)
+
+    Returns:
+        :data_to_page(list):error or success message.
     """
     data_to_page = {}
     if request.method == 'POST':

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>views.py</title>
+  <link rel="stylesheet" href="..\..\..\pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div id="background"></div>
+  <div class='section'>
+    <div class='docs'><h1>views.py</h1></div>
+  </div>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      <p>NeuralMain app logic. Each function is responsible for one page.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="kn">import</span> <span class="n">render</span>
+<span class="kn">from</span> <span class="nn">django.core.files.storage</span> <span class="kn">import</span> <span class="n">FileSystemStorage</span>
+<span class="kn">from</span> <span class="nn">.forms</span> <span class="kn">import</span> <span class="n">PhotoToDatabaseForm</span><span class="p">,</span> <span class="n">PhotoRequestForm</span><span class="p">,</span> <span class="n">ContactsForm</span><span class="p">,</span> <span class="n">AuthForm</span>
+<span class="kn">from</span> <span class="nn">.admin</span> <span class="kn">import</span> <span class="n">auth_data</span>
+<span class="kn">from</span> <span class="nn">.tools.training</span> <span class="kn">import</span> <span class="n">retrain_sys</span>
+<span class="kn">from</span> <span class="nn">.tools.analyze_img</span> <span class="kn">import</span> <span class="n">detect_image</span>
+<span class="kn">from</span> <span class="nn">.tools.file_manipulator</span> <span class="kn">import</span> <span class="n">check_file_name</span><span class="p">,</span> <span class="n">check_filename_extension</span><span class="p">,</span> <span class="n">delete_file</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <p>Function main page. Process uploaded image and defines a type of plant. And save request object to DB.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">request</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <pre><code>Object of PhotoRequest(see item neuralmain/models)
+Parameters:
+</code></pre>
+<ul>
+<li>:data_to_page: data that is sent to the page for output to the user (Error/success msg. Success mgs have info about type of plant(-s).)</li>
+<li>
+<p>:uploaded_file: user img file</p>
+<p>Returns:
+   - :data_to_page(list): error or image plant information.</p>
+</li>
+</ul>
+<p>BASE_DIR_DATA_REQUESTS = BASE_DIR+"_Data\requests" - DISABLED
+current path: media/requests/</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">data_to_page</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">uploaded_file</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;POST&quot;</span><span class="p">:</span>
+        <span class="n">uploaded_file</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">FILES</span><span class="p">[</span><span class="s1">&#39;photo_file&#39;</span><span class="p">]</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>uploaded_file = request.FILES.get('photo_file', False)
+print(str(uploaded_file))</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>        <span class="k">if</span> <span class="ow">not</span> <span class="n">uploaded_file</span><span class="o">.</span><span class="n">multiple_chunks</span><span class="p">(</span><span class="n">chunk_size</span><span class="o">=</span><span class="mi">20971520</span><span class="p">):</span>  <span class="c1"># 20 MB</span>
+            <span class="n">fs</span> <span class="o">=</span> <span class="n">FileSystemStorage</span><span class="p">()</span>
+
+            <span class="n">uploaded_file</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">check_file_name</span><span class="p">(</span><span class="n">uploaded_file</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;requests</span><span class="se">\\</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">uploaded_file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">uploaded_file</span><span class="p">)</span>  <span class="c1"># BASE_DIR_DATA_REQUESTS+&quot;\\&quot;+</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">url</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">form</span> <span class="o">=</span> <span class="n">PhotoRequestForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">FILES</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">check_filename_extension</span><span class="p">(</span><span class="n">uploaded_file</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
+                <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Неверный формат файла.&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">detect_image</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Невозможно распознать файл, Файл повреждён или неизвестен.&#39;</span>
+                    <span class="n">delete_file</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">form</span> <span class="o">=</span> <span class="n">PhotoRequestForm</span><span class="p">()</span>
+            <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Файл не может быть больше 20мб.&quot;</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Uploaded file: &#39;</span><span class="si">{</span><span class="n">uploaded_file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; big, not saved&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">PhotoRequestForm</span><span class="p">()</span>
+    <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;form&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">form</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">&quot;website/main.html&quot;</span><span class="p">,</span> <span class="n">data_to_page</span><span class="p">)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>Function upload page. Save upload object to DB.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">upload</span><span class="p">(</span><span class="n">request</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <pre><code>Object of PhotoToDatabase(see item neuralmain/models)
+Parameters:
+</code></pre>
+<ul>
+<li>:uploaded_file(file): user img file</li>
+<li>
+<p>:data_to_page(list): data that is sent to the page for output to the user (Error/success msg. Success mgs have success text.)</p>
+<p>Returns:
+   - :data_to_page(list): error or success message.</p>
+</li>
+</ul>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">data_to_page</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">uploaded_file</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">FILES</span><span class="p">[</span><span class="s1">&#39;photo_file&#39;</span><span class="p">]</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>print(str(uploaded_file))</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>        <span class="k">if</span> <span class="ow">not</span> <span class="n">uploaded_file</span><span class="o">.</span><span class="n">multiple_chunks</span><span class="p">(</span><span class="n">chunk_size</span><span class="o">=</span><span class="mi">20971520</span><span class="p">):</span>  <span class="c1"># 20 MB</span>
+            <span class="n">x_forwarded_for</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">META</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;HTTP_X_FORWARDED_FOR&#39;</span><span class="p">)</span>  <span class="c1"># take ip address user</span>
+            <span class="k">if</span> <span class="n">x_forwarded_for</span><span class="p">:</span>
+                <span class="n">ipaddress</span> <span class="o">=</span> <span class="n">x_forwarded_for</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ipaddress</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">META</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;REMOTE_ADDR&#39;</span><span class="p">)</span>
+
+            <span class="n">post</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">)</span>  <span class="c1"># make request copy and change data</span>
+            <span class="n">post</span><span class="p">[</span><span class="s1">&#39;photo_author_ip&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ipaddress</span>  <span class="c1"># set ip address</span>
+            <span class="n">post</span><span class="p">[</span><span class="s1">&#39;photo_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span>  <span class="c1"># set current time</span>
+            <span class="n">post</span><span class="p">[</span><span class="s1">&#39;photo_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">uploaded_file</span><span class="o">.</span><span class="n">name</span>  <span class="c1"># name=group+time</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">POST</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">post</span><span class="p">)</span>  <span class="c1"># update request for database</span>
+
+            <span class="n">form</span> <span class="o">=</span> <span class="n">PhotoToDatabaseForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">FILES</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">form</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+                <span class="n">form</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+                <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Спасибо за помощь проекту.&#39;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p>return redirect('upload')  # update page</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>        <span class="k">else</span><span class="p">:</span>
+            <span class="n">form</span> <span class="o">=</span> <span class="n">PhotoToDatabaseForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">FILES</span><span class="p">)</span>
+            <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Big file&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">PhotoToDatabaseForm</span><span class="p">()</span>
+    <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;form&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">form</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;website/upload.html&#39;</span><span class="p">,</span> <span class="n">data_to_page</span><span class="p">)</span>  <span class="c1"># {&#39;form&#39;: form}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <p>Function auth page. Gives access to start relearn system. If login and password field is correct - show button to relearn.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">auth</span><span class="p">(</span><span class="n">request</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      <pre><code>Object of Auth(see item neuralmain/models)
+Parameters:
+</code></pre>
+<ul>
+<li>
+<p>:data_to_page: data that is sent to the page for output to the user (Error/success msg. Success mgs have success text.)</p>
+<p>Returns:
+   - :data_to_page(list):login error or site access.</p>
+</li>
+</ul>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">data_to_page</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">AuthForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">form</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+            <span class="n">login</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">[</span><span class="s1">&#39;login_field&#39;</span><span class="p">]</span>  <span class="c1"># запись логина и пароля в переменные</span>
+            <span class="n">password</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">[</span><span class="s1">&#39;password_field&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">login</span> <span class="ow">in</span> <span class="n">auth_data</span> <span class="ow">and</span> <span class="n">password</span> <span class="o">==</span> <span class="n">auth_data</span><span class="p">[</span><span class="n">login</span><span class="p">]:</span>  <span class="c1"># если есть логин в списке и пароль к нему правильные - пользователь получает допуск</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-10'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-10'>#</a>
+      </div>
+      <p>easteregg</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>                <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;access&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">if</span> <span class="n">login</span> <span class="o">==</span> <span class="s1">&#39;mechanoid&#39;</span><span class="p">:</span>  <span class="c1"># особое сообщение для меня :3</span>
+                    <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Привет, хозяин!&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Добро пожаловать на Leaf Spectator!&#39;</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&gt;&gt;&gt; User &#39;</span><span class="si">{</span><span class="n">login</span><span class="si">}</span><span class="s2">&#39; logged in to the site.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Неверный логин или пароль.&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">[</span><span class="s1">&#39;access_field&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;подтвердить&#39;</span><span class="p">:</span>
+                <span class="n">answer_args</span> <span class="o">=</span> <span class="n">retrain_sys</span><span class="p">()</span>  <span class="c1"># вызов функции переобучения нейросети</span>
+                <span class="k">if</span> <span class="n">answer_args</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Успешно, нейросеть переобучается. Это займёт некоторое время.&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Тренировку системы можно будет запустить через </span><span class="si">{</span><span class="n">answer_args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> часа(-ов).&#39;</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Fatal Error, contact us to solve the problem.&#39;</span>
+                <span class="n">form</span> <span class="o">=</span> <span class="n">AuthForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">AuthForm</span><span class="p">()</span>
+    <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;form&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">form</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;website/auth.html&#39;</span><span class="p">,</span> <span class="n">data_to_page</span><span class="p">)</span>  <span class="c1"># {&#39;form&#39;: form}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-11'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-11'>#</a>
+      </div>
+      <p>Function Contacts page. Ability to communicate with the administrator / moderator. If the fields  are valid - save letter to DB.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">contacts</span><span class="p">(</span><span class="n">request</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-12'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-12'>#</a>
+      </div>
+      <pre><code>Object of Contacts(see item neuralmain/models)
+Parameters:
+</code></pre>
+<ul>
+<li>
+<p>:data_to_page(list): data that is sent to the page for output to the user (Error/success msg. Success mgs have success text.)</p>
+<p>Returns:
+   :data_to_page(list):error or success message.</p>
+</li>
+</ul>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">data_to_page</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">x_forwarded_for</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">META</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;HTTP_X_FORWARDED_FOR&#39;</span><span class="p">)</span>  <span class="c1"># take ip address user</span>
+        <span class="k">if</span> <span class="n">x_forwarded_for</span><span class="p">:</span>
+            <span class="n">ipaddress</span> <span class="o">=</span> <span class="n">x_forwarded_for</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ipaddress</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">META</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;REMOTE_ADDR&#39;</span><span class="p">)</span>
+
+        <span class="n">post_copy</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">)</span>  <span class="c1"># make request copy and change data</span>
+        <span class="n">post_copy</span><span class="p">[</span><span class="s1">&#39;author_ip&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ipaddress</span>  <span class="c1"># set ip address</span>
+        <span class="n">request</span><span class="o">.</span><span class="n">POST</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">post_copy</span><span class="p">)</span>  <span class="c1"># update request for database</span>
+
+        <span class="n">form</span> <span class="o">=</span> <span class="n">ContactsForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">form</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+            <span class="n">form</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+            <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Спасибо за Ваше обращение.&#39;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-13'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-13'>#</a>
+      </div>
+      <p>return redirect('upload')  # update page</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>        <span class="k">else</span><span class="p">:</span>
+            <span class="n">form</span> <span class="o">=</span> <span class="n">ContactsForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">)</span>
+            <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Big file&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">ContactsForm</span><span class="p">()</span>
+    <span class="n">data_to_page</span><span class="p">[</span><span class="s1">&#39;form&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">form</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;website/contacts.html&#39;</span><span class="p">,</span> <span class="n">data_to_page</span><span class="p">)</span>  <span class="c1"># {&#39;form&#39;: form}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-14'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-14'>#</a>
+      </div>
+      <p>Function pattern page. If current mode is Debug: load clear pattern page.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">pattern</span><span class="p">(</span><span class="n">request</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-15'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-15'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;website/pattern.html&#39;</span><span class="p">)</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>

@@ -1,9 +1,9 @@
 """ This module makes it possible to check file extension and name, delete file
 
-:Date: 24-04-2020
-:Version: Beta
-:Authors:
-    - Mechanoid
+    :Date: 24-04-2020
+    :Version: Beta
+    :Authors:
+        - Mechanoid
 """
 
 import pathlib
@@ -13,10 +13,10 @@ from string import ascii_letters
 
 
 def check_file_name(file_name):
-    """This function reformat file name if these is invalid
-
+    """This function reformat file name if these is invalid(not eng letters)
     - Parameters:
         :file_name(str): file name which should be processed if such a name is already in the media folder
+
     - Returns:
         :file_name(str): reformatted file name
     """
@@ -34,9 +34,9 @@ def check_file_name(file_name):
 
 def check_filename_extension(file_name):
     """This function check forbidden extensions and return False if extension allow
-
     - Parameters:
         :file_name(str): file name which should be checked for possible malicious content.
+
     - Returns:
         :return_data(bool): bool False if file clear. Otherwise True.
     """
@@ -56,7 +56,6 @@ def check_filename_extension(file_name):
 
 def delete_file(file_path):
     """This function try delete file from media
-
     - Parameters:
         :file_path(str): path to file which should do deleted
     """

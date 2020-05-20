@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>label_image.py</title>
+  <link rel="stylesheet" href="..\..\..\..\..\pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div id="background"></div>
+  <div class='section'>
+    <div class='docs'><h1>label_image.py</h1></div>
+  </div>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      <p>Copyright 2017 The TensorFlow Authors. All Rights Reserved.</p>
+<p>Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at</p>
+<pre><code>http://www.apache.org/licenses/LICENSE-2.0
+</code></pre>
+<p>Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">pathlib</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">load_graph</span><span class="p">(</span><span class="n">model_file</span><span class="p">):</span>
+    <span class="n">graph</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+    <span class="n">graph_def</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">GraphDef</span><span class="p">()</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">model_file</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">graph_def</span><span class="o">.</span><span class="n">ParseFromString</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+    <span class="k">with</span> <span class="n">graph</span><span class="o">.</span><span class="n">as_default</span><span class="p">():</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">import_graph_def</span><span class="p">(</span><span class="n">graph_def</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">graph</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">read_tensor_from_image_file</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="n">input_height</span><span class="o">=</span><span class="mi">299</span><span class="p">,</span> <span class="n">input_width</span><span class="o">=</span><span class="mi">299</span><span class="p">,</span>
+                                <span class="n">input_mean</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">input_std</span><span class="o">=</span><span class="mi">255</span><span class="p">):</span>
+    <span class="n">input_name</span> <span class="o">=</span> <span class="s2">&quot;file_reader&quot;</span>
+    <span class="n">output_name</span> <span class="o">=</span> <span class="s2">&quot;normalized&quot;</span>
+    <span class="n">file_reader</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="n">input_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">file_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.png&quot;</span><span class="p">):</span>
+        <span class="n">image_reader</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_png</span><span class="p">(</span><span class="n">file_reader</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                                           <span class="n">name</span><span class="o">=</span><span class="s1">&#39;png_reader&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">file_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.gif&quot;</span><span class="p">):</span>
+        <span class="n">image_reader</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_gif</span><span class="p">(</span><span class="n">file_reader</span><span class="p">,</span>
+                                                      <span class="n">name</span><span class="o">=</span><span class="s1">&#39;gif_reader&#39;</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">file_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.bmp&quot;</span><span class="p">):</span>
+        <span class="n">image_reader</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_bmp</span><span class="p">(</span><span class="n">file_reader</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;bmp_reader&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">image_reader</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_jpeg</span><span class="p">(</span><span class="n">file_reader</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                                            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;jpeg_reader&#39;</span><span class="p">)</span>
+    <span class="n">float_caster</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">image_reader</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">dims_expander</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">float_caster</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="n">resized</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">resize_bilinear</span><span class="p">(</span><span class="n">dims_expander</span><span class="p">,</span> <span class="p">[</span><span class="n">input_height</span><span class="p">,</span> <span class="n">input_width</span><span class="p">])</span>
+    <span class="n">normalized</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="n">resized</span><span class="p">,</span> <span class="p">[</span><span class="n">input_mean</span><span class="p">]),</span> <span class="p">[</span><span class="n">input_std</span><span class="p">])</span>
+    <span class="n">sess</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">normalized</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">load_labels</span><span class="p">(</span><span class="n">label_file</span><span class="p">):</span>
+    <span class="n">label</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">proto_as_ascii_lines</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gfile</span><span class="o">.</span><span class="n">GFile</span><span class="p">(</span><span class="n">label_file</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">proto_as_ascii_lines</span><span class="p">:</span>
+        <span class="n">label</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">rstrip</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">label</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>if <strong>name</strong> == "<strong>main</strong>":</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">run_analyse</span><span class="p">(</span><span class="n">path_image</span><span class="p">):</span>
+    <span class="n">file_name</span> <span class="o">=</span> <span class="n">path_image</span>
+    <span class="n">LOCAL_PATH</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">absolute</span><span class="p">())</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;scripts&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+    <span class="n">model_file</span> <span class="o">=</span> <span class="n">LOCAL_PATH</span> <span class="o">+</span> <span class="s2">&quot;tf_files/retrained_graph.pb&quot;</span>
+    <span class="n">label_file</span> <span class="o">=</span> <span class="n">LOCAL_PATH</span> <span class="o">+</span> <span class="s2">&quot;tf_files/retrained_labels.txt&quot;</span>
+    <span class="n">input_height</span> <span class="o">=</span> <span class="mi">299</span>
+    <span class="n">input_width</span> <span class="o">=</span> <span class="mi">299</span>
+    <span class="n">input_mean</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">input_std</span> <span class="o">=</span> <span class="mi">255</span>
+    <span class="n">input_layer</span> <span class="o">=</span> <span class="s2">&quot;Mul&quot;</span>
+    <span class="n">output_layer</span> <span class="o">=</span> <span class="s2">&quot;final_result&quot;</span>
+
+    <span class="n">graph</span> <span class="o">=</span> <span class="n">load_graph</span><span class="p">(</span><span class="n">model_file</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">read_tensor_from_image_file</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span>
+                                    <span class="n">input_height</span><span class="o">=</span><span class="n">input_height</span><span class="p">,</span>
+                                    <span class="n">input_width</span><span class="o">=</span><span class="n">input_width</span><span class="p">,</span>
+                                    <span class="n">input_mean</span><span class="o">=</span><span class="n">input_mean</span><span class="p">,</span>
+                                    <span class="n">input_std</span><span class="o">=</span><span class="n">input_std</span><span class="p">)</span>
+
+    <span class="n">input_name</span> <span class="o">=</span> <span class="s2">&quot;import/&quot;</span> <span class="o">+</span> <span class="n">input_layer</span>
+    <span class="n">output_name</span> <span class="o">=</span> <span class="s2">&quot;import/&quot;</span> <span class="o">+</span> <span class="n">output_layer</span>
+    <span class="n">input_operation</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">get_operation_by_name</span><span class="p">(</span><span class="n">input_name</span><span class="p">);</span>
+    <span class="n">output_operation</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">get_operation_by_name</span><span class="p">(</span><span class="n">output_name</span><span class="p">);</span>
+
+    <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">Session</span><span class="p">(</span><span class="n">graph</span><span class="o">=</span><span class="n">graph</span><span class="p">)</span> <span class="k">as</span> <span class="n">sess</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">output_operation</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                           <span class="p">{</span><span class="n">input_operation</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="n">t</span><span class="p">})</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+    <span class="n">top_k</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">argsort</span><span class="p">()[</span><span class="o">-</span><span class="mi">5</span><span class="p">:][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">load_labels</span><span class="p">(</span><span class="n">label_file</span><span class="p">)</span>
+
+    <span class="n">data_to_return</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">time_work</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Evaluation time (1-image): </span><span class="si">{:.3f}</span><span class="s1">s</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">time_work</span><span class="p">)</span>
+    <span class="n">data_to_return</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">s&#39;</span><span class="p">)</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> (score=</span><span class="si">{:0.5f}</span><span class="s2">)&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">top_k</span><span class="p">:</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>data_to_return.append(f'{labels[i]} - {results[i]*100:.3f}%')</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>        <span class="n">data_to_return</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">results</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p>print(template.format(labels[i], results[i]))</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s1"> - </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">data_to_return</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>

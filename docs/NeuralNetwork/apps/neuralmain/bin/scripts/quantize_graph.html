@@ -1,0 +1,2487 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>quantize_graph.py</title>
+  <link rel="stylesheet" href="..\..\..\..\..\pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div id="background"></div>
+  <div class='section'>
+    <div class='docs'><h1>quantize_graph.py</h1></div>
+  </div>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      <p>Copyright 2015 The TensorFlow Authors. All Rights Reserved.</p>
+<p>Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at</p>
+<pre><code>http://www.apache.org/licenses/LICENSE-2.0
+</code></pre>
+<p>Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Transforms a float-trained graph into an equivalent quantized version.</span>
+
+<span class="sd">An example of command-line usage is:</span>
+<span class="sd">bazel build tensorflow/tools/quantization:quantize_graph \</span>
+<span class="sd">&amp;&amp; bazel-bin/tensorflow/tools/quantization/quantize_graph \</span>
+<span class="sd">--input=tensorflow_inception_graph.pb</span>
+<span class="sd">--output_node_names=&quot;softmax2&quot; --print_nodes --output=/tmp/quantized_graph.pb \</span>
+<span class="sd">--mode=eightbit --logtostderr</span>
+<span class="sd">#DIVIDER</span>
+<span class="sd">flags.DEFINE_string(&quot;output&quot;, &quot;&quot;, &quot;&quot;&quot;</span><span class="n">File</span> <span class="n">to</span> <span class="n">save</span> <span class="n">the</span> <span class="n">output</span> <span class="n">graph</span> <span class="n">to</span><span class="o">.</span><span class="s2">&quot;&quot;&quot;)</span>
+<span class="s2">flags.DEFINE_integer(&quot;bitdepth&quot;, 8,</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">flags.DEFINE_boolean(&quot;quantized_input&quot;, False,</span>
+<span class="s2">                     &quot;If true, assume Placeholders are quantized with values &quot;</span>
+<span class="s2">                     &quot;covering [--quantized_input_min,--quantized_input_max]. &quot;</span>
+<span class="s2">                     &quot;Only supported when --mode=eightbit&quot;)</span>
+<span class="s2">flags.DEFINE_float(&quot;quantized_input_min&quot;, 0,</span>
+<span class="s2">                   &quot;The minimum of the actual input range when &quot;</span>
+<span class="s2">                   &quot;--quantized_input&quot;)</span>
+<span class="s2">flags.DEFINE_float(&quot;quantized_input_max&quot;, 1,</span>
+<span class="s2">                   &quot;The maximum of the actual input range when &quot;</span>
+<span class="s2">                   &quot;--quantized_input&quot;)</span>
+<span class="s2">flags.DEFINE_float(</span>
+<span class="s2">    &quot;quantized_fallback_min&quot;, None,</span>
+<span class="s2">    &quot;The fallback &#39;min&#39; value to use for layers which lack min-max &quot;</span>
+<span class="s2">    &quot;information. Note: this should be considered a coarse tool just good &quot;</span>
+<span class="s2">    &quot;enough for experimentation purposes, since graphs quantized in this way &quot;</span>
+<span class="s2">    &quot;would be very inaccurate.&quot;)</span>
+<span class="s2">flags.DEFINE_float(</span>
+<span class="s2">    &quot;quantized_fallback_max&quot;, None,</span>
+<span class="s2">    &quot;The fallback &#39;max&#39; value to use for layers which lack min-max &quot;</span>
+<span class="s2">    &quot;information. Note: this should be considered a coarse tool just good &quot;</span>
+<span class="s2">    &quot;enough for experimentation purposes, since graphs quantized in this way &quot;</span>
+<span class="s2">    &quot;would be very inaccurate.&quot;)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def print_input_nodes(current_node, nodes_map, indent, already_visited):</span>
+<span class="s2">  print(&quot; &quot; * indent + current_node.op + &quot;:&quot; + current_node.name)</span>
+<span class="s2">  already_visited[current_node.name] = True</span>
+<span class="s2">  for input_node_name in current_node.input:</span>
+<span class="s2">    if input_node_name in already_visited:</span>
+<span class="s2">      continue</span>
+<span class="s2">    input_node = nodes_map[input_node_name]</span>
+<span class="s2">    print_input_nodes(input_node, nodes_map, indent + 1, already_visited)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def create_node(op, name, inputs):</span>
+<span class="s2">  new_node = node_def_pb2.NodeDef()</span>
+<span class="s2">  new_node.op = op</span>
+<span class="s2">  new_node.name = name</span>
+<span class="s2">  for input_name in inputs:</span>
+<span class="s2">    new_node.input.extend([input_name])</span>
+<span class="s2">  return new_node</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def create_constant_node(name, value, dtype, shape=None):</span>
+<span class="s2">  node = create_node(&quot;Const&quot;, name, [])</span>
+<span class="s2">  set_attr_dtype(node, &quot;dtype&quot;, dtype)</span>
+<span class="s2">  set_attr_tensor(node, &quot;value&quot;, value, dtype, shape)</span>
+<span class="s2">  return node</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def copy_attr(node, key, attr_value):</span>
+<span class="s2">  try:</span>
+<span class="s2">    node.attr[key].CopyFrom(attr_value)</span>
+<span class="s2">  except KeyError:</span>
+<span class="s2">    pass</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def set_attr_dtype(node, key, value):</span>
+<span class="s2">  try:</span>
+<span class="s2">    node.attr[key].CopyFrom(</span>
+<span class="s2">        attr_value_pb2.AttrValue(type=value.as_datatype_enum))</span>
+<span class="s2">  except KeyError:</span>
+<span class="s2">    pass</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def set_attr_shape(node, key, value):</span>
+<span class="s2">  try:</span>
+<span class="s2">    node.attr[key].CopyFrom(</span>
+<span class="s2">        attr_value_pb2.AttrValue(shape=tensor_shape.as_shape(value).as_proto()))</span>
+<span class="s2">  except KeyError:</span>
+<span class="s2">    pass</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def set_attr_tensor(node, key, value, dtype, shape=None):</span>
+<span class="s2">  try:</span>
+<span class="s2">    node.attr[key].CopyFrom(</span>
+<span class="s2">        attr_value_pb2.AttrValue(tensor=tensor_util.make_tensor_proto(</span>
+<span class="s2">            value, dtype=dtype, shape=shape)))</span>
+<span class="s2">  except KeyError:</span>
+<span class="s2">    pass</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def set_attr_string(node, key, value):</span>
+<span class="s2">  try:</span>
+<span class="s2">    node.attr[key].CopyFrom(attr_value_pb2.AttrValue(s=value))</span>
+<span class="s2">  except KeyError:</span>
+<span class="s2">    pass</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def set_attr_int_list(node, key, value):</span>
+<span class="s2">  list_value = attr_value_pb2.AttrValue.ListValue(i=value)</span>
+<span class="s2">  try:</span>
+<span class="s2">    node.attr[key].CopyFrom(attr_value_pb2.AttrValue(list=list_value))</span>
+<span class="s2">  except KeyError:</span>
+<span class="s2">    pass</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def set_attr_bool(node, key, value):</span>
+<span class="s2">  try:</span>
+<span class="s2">    node.attr[key].CopyFrom(attr_value_pb2.AttrValue(b=value))</span>
+<span class="s2">  except KeyError:</span>
+<span class="s2">    pass</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def set_attr_int(node, key, value):</span>
+<span class="s2">  try:</span>
+<span class="s2">    node.attr[key].CopyFrom(attr_value_pb2.AttrValue(i=value))</span>
+<span class="s2">  except KeyError:</span>
+<span class="s2">    pass</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def set_attr_float(node, key, value):</span>
+<span class="s2">  try:</span>
+<span class="s2">    node.attr[key].CopyFrom(attr_value_pb2.AttrValue(f=value))</span>
+<span class="s2">  except KeyError:</span>
+<span class="s2">    pass</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def node_name_from_input(node_name):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  if node_name.startswith(&quot;^&quot;):</span>
+<span class="s2">    node_name = node_name[1:]</span>
+<span class="s2">  m = re.search(r&quot;(.*):\d+$&quot;, node_name)</span>
+<span class="s2">  if m:</span>
+<span class="s2">    node_name = m.group(1)</span>
+<span class="s2">  return node_name</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def ensure_tensor_name_has_port(node_name):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  m = re.search(r&quot;(.*):\d+$&quot;, node_name)</span>
+<span class="s2">  if m:</span>
+<span class="s2">    name_with_port = node_name</span>
+<span class="s2">  else:</span>
+<span class="s2">    name_with_port = node_name + &quot;:0&quot;</span>
+<span class="s2">  return name_with_port</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def unique_node_name_from_input(node_name):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  return node_name.replace(&quot;:&quot;, &quot;__port__&quot;).replace(&quot;^&quot;, &quot;__hat__&quot;)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def quantize_array(arr, num_buckets):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  if num_buckets &lt; 1:</span>
+<span class="s2">    raise ValueError(&quot;num_buckets must be &gt;= 1&quot;)</span>
+<span class="s2">  arr_max = arr.max()</span>
+<span class="s2">  arr_min = arr.min()</span>
+<span class="s2">  if arr_max == arr_min:</span>
+<span class="s2">    return arr</span>
+<span class="s2">  bucket_width = (arr_max - arr_min) / num_buckets</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  bucket_indices = np.floor((arr - arr_min) / bucket_width)</span>
+<span class="s2">  bucket_indices[bucket_indices == num_buckets] = num_buckets - 1</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  arr = arr_min + bucket_width * (bucket_indices + 0.5)</span>
+<span class="s2">  return arr</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def quantize_weight_rounded(input_node):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  input_tensor = input_node.attr[&quot;value&quot;].tensor</span>
+<span class="s2">  tensor_value = tensor_util.MakeNdarray(input_tensor)</span>
+<span class="s2">  shape = input_tensor.tensor_shape</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  num_buckets = 1 &lt;&lt; FLAGS.bitdepth</span>
+<span class="s2">  tensor_value_rounded = quantize_array(tensor_value, num_buckets)</span>
+<span class="s2">  tensor_shape_list = tensor_util.TensorShapeProtoToList(shape)</span>
+<span class="s2">  return [</span>
+<span class="s2">      create_constant_node(</span>
+<span class="s2">          input_node.name,</span>
+<span class="s2">          tensor_value_rounded,</span>
+<span class="s2">          dtypes.float32,</span>
+<span class="s2">          shape=tensor_shape_list)</span>
+<span class="s2">  ]</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def quantize_weight_eightbit(input_node, quantization_mode):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  base_name = input_node.name + &quot;_&quot;</span>
+<span class="s2">  quint8_const_name = base_name + &quot;quint8_const&quot;</span>
+<span class="s2">  min_name = base_name + &quot;min&quot;</span>
+<span class="s2">  max_name = base_name + &quot;max&quot;</span>
+<span class="s2">  float_tensor = tensor_util.MakeNdarray(input_node.attr[&quot;value&quot;].tensor)</span>
+<span class="s2">  min_value = np.min(float_tensor.flatten())</span>
+<span class="s2">  max_value = np.max(float_tensor.flatten())</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  if min_value &gt; 0.0:</span>
+<span class="s2">    min_value = 0.0</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  if min_value == max_value:</span>
+<span class="s2">    if abs(min_value) &lt; 0.000001:</span>
+<span class="s2">      max_value = min_value + 1.0</span>
+<span class="s2">    elif min_value &gt; 0:</span>
+<span class="s2">      max_value = 2 * min_value</span>
+<span class="s2">    else:</span>
+<span class="s2">      max_value = min_value / 2.0</span>
+
+<span class="s2">  sess = session.Session()</span>
+<span class="s2">  with sess.as_default():</span>
+<span class="s2">    quantize_op = array_ops.quantize_v2(</span>
+<span class="s2">        float_tensor,</span>
+<span class="s2">        min_value,</span>
+<span class="s2">        max_value,</span>
+<span class="s2">        dtypes.quint8,</span>
+<span class="s2">        mode=quantization_mode)</span>
+<span class="s2">    quint8_tensor = quantize_op[0].eval()</span>
+<span class="s2">  shape = tensor_util.TensorShapeProtoToList(input_node.attr[&quot;value&quot;]</span>
+<span class="s2">                                             .tensor.tensor_shape)</span>
+<span class="s2">  quint8_const_node = create_constant_node(</span>
+<span class="s2">      quint8_const_name, quint8_tensor, dtypes.quint8, shape=shape)</span>
+<span class="s2">  min_node = create_constant_node(min_name, min_value, dtypes.float32)</span>
+<span class="s2">  max_node = create_constant_node(max_name, max_value, dtypes.float32)</span>
+<span class="s2">  dequantize_node = create_node(&quot;Dequantize&quot;, input_node.name,</span>
+<span class="s2">                                [quint8_const_name, min_name, max_name])</span>
+<span class="s2">  set_attr_dtype(dequantize_node, &quot;T&quot;, dtypes.quint8)</span>
+<span class="s2">  set_attr_string(dequantize_node, &quot;mode&quot;, quantization_mode)</span>
+<span class="s2">  return [quint8_const_node, min_node, max_node, dequantize_node]</span>
+
+
+<span class="s2">EightbitizeRecursionState = collections.namedtuple(</span>
+<span class="s2">    &quot;EightbitizeRecursionState&quot;,</span>
+<span class="s2">    [&quot;already_visited&quot;, &quot;output_node_stack&quot;, &quot;merged_with_fake_quant&quot;])</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">class GraphRewriter(object):</span>
+<span class="s2">#DIVIDER</span>
+
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def __init__(self,</span>
+<span class="s2">               input_graph,</span>
+<span class="s2">               mode,</span>
+<span class="s2">               quantized_input_range,</span>
+<span class="s2">               fallback_quantization_range=None):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    self.input_graph = input_graph</span>
+<span class="s2">    self.nodes_map = self.create_nodes_map(input_graph)</span>
+<span class="s2">    self.output_graph = None</span>
+<span class="s2">    self.mode = mode</span>
+<span class="s2">    self.final_node_renames = </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">    if quantized_input_range:</span>
+<span class="s2">      self.input_range = (quantized_input_range[0], quantized_input_range[1])</span>
+<span class="s2">      if self.input_range[0] &gt;= self.input_range[1]:</span>
+<span class="s2">        raise ValueError(&quot;Invalid quantized_input_range: [</span><span class="si">%s</span><span class="s2">,</span><span class="si">%s</span><span class="s2">]&quot; %</span>
+<span class="s2">                         self.input_range)</span>
+<span class="s2">      if self.mode != &quot;eightbit&quot;:</span>
+<span class="s2">        raise ValueError(</span>
+<span class="s2">            &quot;quantized_input_range can only be specified in eightbit mode&quot;)</span>
+<span class="s2">    else:</span>
+<span class="s2">      self.input_range = None</span>
+
+<span class="s2">    if fallback_quantization_range:</span>
+<span class="s2">      self.fallback_quantization_range = [</span>
+<span class="s2">          fallback_quantization_range[0], fallback_quantization_range[1]</span>
+<span class="s2">      ]</span>
+<span class="s2">      if (self.fallback_quantization_range[0] &gt;=</span>
+<span class="s2">          self.fallback_quantization_range[1]):</span>
+<span class="s2">        raise ValueError(&quot;Invalid fallback_quantization_range: [</span><span class="si">%s</span><span class="s2">,</span><span class="si">%s</span><span class="s2">]&quot; %</span>
+<span class="s2">                         self.fallback_quantization_range)</span>
+<span class="s2">      if self.mode != &quot;eightbit&quot;:</span>
+<span class="s2">        raise ValueError(&quot;fallback_quantization_range can only be &quot;</span>
+<span class="s2">                         &quot;specified in eightbit mode&quot;)</span>
+<span class="s2">    else:</span>
+<span class="s2">      self.fallback_quantization_range = None</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    self.state = None</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def create_nodes_map(self, graph):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    nodes_map = </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">    for node in graph.node:</span>
+<span class="s2">      if node.name not in nodes_map.keys():</span>
+<span class="s2">        nodes_map[node.name] = node</span>
+<span class="s2">      else:</span>
+<span class="s2">        raise ValueError(&quot;Duplicate node names detected.&quot;)</span>
+<span class="s2">    return nodes_map</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def rewrite(self, output_node_names):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    self.output_graph = graph_pb2.GraphDef()</span>
+<span class="s2">    output_nodes = [</span>
+<span class="s2">        self.nodes_map[output_node_name]</span>
+<span class="s2">        for output_node_name in output_node_names</span>
+<span class="s2">    ]</span>
+<span class="s2">    if self.mode == &quot;round&quot;:</span>
+<span class="s2">      self.already_visited = </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">      for output_node in output_nodes:</span>
+<span class="s2">        self.round_nodes_recursively(output_node)</span>
+<span class="s2">    elif self.mode == &quot;quantize&quot;:</span>
+<span class="s2">      self.already_visited = </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">      self.already_quantized = </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">      for output_node in output_nodes:</span>
+<span class="s2">        self.quantize_nodes_recursively(output_node)</span>
+<span class="s2">    elif self.mode == &quot;eightbit&quot;:</span>
+<span class="s2">      self.set_input_graph(graph_util.remove_training_nodes(self.input_graph))</span>
+<span class="s2">      output_nodes = [</span>
+<span class="s2">          self.nodes_map[output_node_name]</span>
+<span class="s2">          for output_node_name in output_node_names</span>
+<span class="s2">      ]</span>
+
+<span class="s2">      self.state = EightbitizeRecursionState(</span>
+<span class="s2">          already_visited=</span><span class="si">{}</span><span class="s2">, output_node_stack=[], merged_with_fake_quant=</span><span class="si">{}</span><span class="s2">)</span>
+<span class="s2">      for output_node in output_nodes:</span>
+<span class="s2">        self.eightbitize_nodes_recursively(output_node)</span>
+<span class="s2">      self.state = None</span>
+<span class="s2">      if self.input_range:</span>
+<span class="s2">        self.add_output_graph_node(</span>
+<span class="s2">            create_constant_node(&quot;quantized_input_min_value&quot;, self.input_range[</span>
+<span class="s2">                0], dtypes.float32, []))</span>
+<span class="s2">        self.add_output_graph_node(</span>
+<span class="s2">            create_constant_node(&quot;quantized_input_max_value&quot;, self.input_range[</span>
+<span class="s2">                1], dtypes.float32, []))</span>
+<span class="s2">      if self.fallback_quantization_range:</span>
+<span class="s2">        self.add_output_graph_node(</span>
+<span class="s2">            create_constant_node(&quot;fallback_quantization_min_value&quot;,</span>
+<span class="s2">                                 self.fallback_quantization_range[0],</span>
+<span class="s2">                                 dtypes.float32, []))</span>
+<span class="s2">        self.add_output_graph_node(</span>
+<span class="s2">            create_constant_node(&quot;fallback_quantization_max_value&quot;,</span>
+<span class="s2">                                 self.fallback_quantization_range[1],</span>
+<span class="s2">                                 dtypes.float32, []))</span>
+<span class="s2">      if FLAGS.strip_redundant_quantization:</span>
+<span class="s2">        self.output_graph = self.remove_redundant_quantization(</span>
+<span class="s2">            self.output_graph)</span>
+<span class="s2">        self.remove_dead_nodes(output_node_names)</span>
+<span class="s2">      self.apply_final_node_renames()</span>
+<span class="s2">    elif self.mode == &quot;weights&quot;:</span>
+<span class="s2">      self.output_graph = self.quantize_weights(self.input_graph,</span>
+<span class="s2">                                                b&quot;MIN_COMBINED&quot;)</span>
+<span class="s2">      self.remove_dead_nodes(output_node_names)</span>
+<span class="s2">    elif self.mode == &quot;weights_rounded&quot;:</span>
+<span class="s2">      self.output_graph = self.quantize_weights(self.input_graph, self.mode)</span>
+<span class="s2">      self.remove_dead_nodes(output_node_names)</span>
+<span class="s2">    else:</span>
+<span class="s2">      print(&quot;Bad mode - &quot; + self.mode + &quot;.&quot;)</span>
+<span class="s2">    return self.output_graph</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def round_nodes_recursively(self, current_node):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    if self.already_visited[current_node.name]:</span>
+<span class="s2">      return</span>
+<span class="s2">    self.already_visited[current_node.name] = True</span>
+<span class="s2">    for input_node_name in current_node.input:</span>
+<span class="s2">      input_node_name = node_name_from_input(input_node_name)</span>
+<span class="s2">      input_node = self.nodes_map[input_node_name]</span>
+<span class="s2">      self.round_nodes_recursively(input_node)</span>
+<span class="s2">    nodes_to_quantize = [&quot;Conv2D&quot;, &quot;BiasAdd&quot;, &quot;MatMul&quot;]</span>
+<span class="s2">    if any(current_node.op in s for s in nodes_to_quantize):</span>
+<span class="s2">      new_node = node_def_pb2.NodeDef()</span>
+<span class="s2">      new_node.CopyFrom(current_node)</span>
+<span class="s2">      new_node.name = current_node.name + &quot;_original&quot;</span>
+<span class="s2">      self.add_output_graph_node(new_node)</span>
+<span class="s2">      levels = 1 &lt;&lt; FLAGS.bitdepth</span>
+<span class="s2">      constant_name = current_node.name + &quot;_round_depth&quot;</span>
+<span class="s2">      constant_tensor = constant_op.constant(</span>
+<span class="s2">          levels, dtype=dtypes.int32, name=constant_name)</span>
+<span class="s2">      constant_node = constant_tensor.op.node_def</span>
+<span class="s2">      self.add_output_graph_node(constant_node)</span>
+<span class="s2">      quantize_node = node_def_pb2.NodeDef()</span>
+<span class="s2">      quantize_node.op = &quot;RoundToSteps&quot;</span>
+<span class="s2">      quantize_node.name = current_node.name</span>
+<span class="s2">      quantize_node.input.extend([current_node.name + &quot;_original&quot;])</span>
+<span class="s2">      quantize_node.input.extend([constant_node.name])</span>
+<span class="s2">      self.add_output_graph_node(quantize_node)</span>
+<span class="s2">    else:</span>
+<span class="s2">      new_node = node_def_pb2.NodeDef()</span>
+<span class="s2">      new_node.CopyFrom(current_node)</span>
+<span class="s2">      self.add_output_graph_node(new_node)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def quantize_nodes_recursively(self, current_node):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    if self.already_visited[current_node.name]:</span>
+<span class="s2">      return</span>
+<span class="s2">    self.already_visited[current_node.name] = True</span>
+<span class="s2">    for input_node_name in current_node.input:</span>
+<span class="s2">      input_node_name = node_name_from_input(input_node_name)</span>
+<span class="s2">      input_node = self.nodes_map[input_node_name]</span>
+<span class="s2">      self.quantize_nodes_recursively(input_node)</span>
+<span class="s2">    nodes_to_quantize = [&quot;Conv2D&quot;, &quot;BiasAdd&quot;, &quot;MatMul&quot;]</span>
+<span class="s2">    if any(current_node.op in s for s in nodes_to_quantize):</span>
+<span class="s2">      for input_name in current_node.input:</span>
+<span class="s2">        input_name = node_name_from_input(input_name)</span>
+<span class="s2">        input_node = self.nodes_map[input_name]</span>
+<span class="s2">        self.quantize_node(input_node)</span>
+<span class="s2">      self.quantize_node(current_node)</span>
+<span class="s2">    else:</span>
+<span class="s2">      new_node = node_def_pb2.NodeDef()</span>
+<span class="s2">      new_node.CopyFrom(current_node)</span>
+<span class="s2">      self.add_output_graph_node(new_node)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def quantize_node(self, input_node):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    input_name = input_node.name</span>
+<span class="s2">    if input_name in self.already_quantized:</span>
+<span class="s2">      return</span>
+<span class="s2">    self.already_quantized[input_name] = True</span>
+<span class="s2">    original_input_name = input_name + &quot;_original&quot;</span>
+<span class="s2">    reshape_name = input_name + &quot;_reshape&quot;</span>
+<span class="s2">    reshape_dims_name = input_name + &quot;_reshape_dims&quot;</span>
+<span class="s2">    max_name = input_name + &quot;_max&quot;</span>
+<span class="s2">    min_name = input_name + &quot;_min&quot;</span>
+<span class="s2">    dims_name = input_name + &quot;_dims&quot;</span>
+<span class="s2">    quantize_name = input_name + &quot;_quantize&quot;</span>
+<span class="s2">    dequantize_name = input_name</span>
+<span class="s2">    original_input_node = node_def_pb2.NodeDef()</span>
+<span class="s2">    original_input_node.CopyFrom(input_node)</span>
+<span class="s2">    original_input_node.name = original_input_name</span>
+<span class="s2">    self.add_output_graph_node(original_input_node)</span>
+<span class="s2">    reshape_dims_node = create_constant_node(reshape_dims_name, -1,</span>
+<span class="s2">                                             dtypes.int32, [1])</span>
+<span class="s2">    self.add_output_graph_node(reshape_dims_node)</span>
+<span class="s2">    reshape_node = create_node(&quot;Reshape&quot;, reshape_name,</span>
+<span class="s2">                               [original_input_name, reshape_dims_name])</span>
+<span class="s2">    set_attr_dtype(reshape_node, &quot;T&quot;, dtypes.float32)</span>
+<span class="s2">    self.add_output_graph_node(reshape_node)</span>
+<span class="s2">    dims_node = create_constant_node(dims_name, 0, dtypes.int32, [1])</span>
+<span class="s2">    self.add_output_graph_node(dims_node)</span>
+<span class="s2">    max_node = create_node(&quot;Max&quot;, max_name, [reshape_name, dims_name])</span>
+<span class="s2">    set_attr_dtype(max_node, &quot;T&quot;, dtypes.float32)</span>
+<span class="s2">    set_attr_bool(max_node, &quot;keep_dims&quot;, False)</span>
+<span class="s2">    self.add_output_graph_node(max_node)</span>
+<span class="s2">    min_node = create_node(&quot;Min&quot;, min_name, [reshape_name, dims_name])</span>
+<span class="s2">    set_attr_dtype(min_node, &quot;T&quot;, dtypes.float32)</span>
+<span class="s2">    set_attr_bool(min_node, &quot;keep_dims&quot;, False)</span>
+<span class="s2">    self.add_output_graph_node(min_node)</span>
+<span class="s2">    quantize_node = create_node(&quot;Quantize&quot;, quantize_name,</span>
+<span class="s2">                                [original_input_name, min_name, max_name])</span>
+<span class="s2">    set_attr_dtype(quantize_node, &quot;T&quot;, dtypes.quint8)</span>
+<span class="s2">    set_attr_string(quantize_node, &quot;mode&quot;, b&quot;MIN_FIRST&quot;)</span>
+<span class="s2">    self.add_output_graph_node(quantize_node)</span>
+<span class="s2">    dequantize_node = create_node(&quot;Dequantize&quot;, dequantize_name,</span>
+<span class="s2">                                  [quantize_name, min_name, max_name])</span>
+<span class="s2">    set_attr_dtype(dequantize_node, &quot;T&quot;, dtypes.quint8)</span>
+<span class="s2">    set_attr_string(dequantize_node, &quot;mode&quot;, b&quot;MIN_FIRST&quot;)</span>
+<span class="s2">    self.add_output_graph_node(dequantize_node)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def should_merge_with_fake_quant_node(self):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    if not self.state.output_node_stack:</span>
+<span class="s2">      return False</span>
+<span class="s2">    top = self.state.output_node_stack[-1]</span>
+<span class="s2">    return top[1] == 0 and top[0].op in [&quot;FakeQuantWithMinMaxVars&quot;]</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def should_quantize_const(self, node):</span>
+<span class="s2">    if not self.state.output_node_stack:</span>
+<span class="s2">      return False</span>
+<span class="s2">    top = self.state.output_node_stack[-1]</span>
+<span class="s2">    if not top[2]:</span>
+<span class="s2">      return False</span>
+<span class="s2">    dtype = dtypes.as_dtype(node.attr[&quot;dtype&quot;].type)</span>
+<span class="s2">    assert dtype == dtypes.float32, (</span>
+<span class="s2">        &quot;Failed to quantized constant </span><span class="si">%s</span><span class="s2"> of type </span><span class="si">%s</span><span class="s2">&quot; % (node.name, dtype))</span>
+<span class="s2">    return True</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def eightbitize_nodes_recursively(self, current_node):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    if current_node.name in self.state.already_visited:</span>
+<span class="s2">      if (self.should_merge_with_fake_quant_node() or</span>
+<span class="s2">          current_node.name in self.state.merged_with_fake_quant):</span>
+<span class="s2">        raise ValueError(&quot;Unsupported graph structure: output of node </span><span class="si">%s</span><span class="s2"> &quot;</span>
+<span class="s2">                         &quot;is processed by a FakeQuant* node and should have &quot;</span>
+<span class="s2">                         &quot;no other outputs.&quot;, current_node.name)</span>
+<span class="s2">      return</span>
+<span class="s2">    self.state.already_visited[current_node.name] = True</span>
+
+<span class="s2">    for i, input_node_name in enumerate(current_node.input):</span>
+<span class="s2">      quantize_input = False</span>
+<span class="s2">      if current_node.op in (&quot;MatMul&quot;, &quot;Conv2D&quot;, &quot;BiasAdd&quot;, &quot;MaxPool&quot;,</span>
+<span class="s2">                             &quot;AvgPool&quot;, &quot;Relu&quot;, &quot;Relu6&quot;,</span>
+<span class="s2">                             &quot;BatchNormWithGlobalNormalization&quot;):</span>
+<span class="s2">        quantize_input = True</span>
+<span class="s2">      elif current_node.op == &quot;Concat&quot; and i &gt; 0:</span>
+<span class="s2">        quantize_input = (</span>
+<span class="s2">            dtypes.as_dtype(current_node.attr[&quot;T&quot;].type) == dtypes.float32)</span>
+<span class="s2">      elif current_node.op == &quot;Reshape&quot; and i == 0:</span>
+<span class="s2">        quantize_input = (</span>
+<span class="s2">            dtypes.as_dtype(current_node.attr[&quot;T&quot;].type) == dtypes.float32)</span>
+
+<span class="s2">      self.state.output_node_stack.append((current_node, i, quantize_input))</span>
+
+<span class="s2">      input_node_name = node_name_from_input(input_node_name)</span>
+<span class="s2">      input_node = self.nodes_map[input_node_name]</span>
+<span class="s2">      self.eightbitize_nodes_recursively(input_node)</span>
+
+<span class="s2">      self.state.output_node_stack.pop()</span>
+
+<span class="s2">    if current_node.op == &quot;MatMul&quot;:</span>
+<span class="s2">      self.eightbitize_mat_mul_node(current_node)</span>
+<span class="s2">    elif current_node.op == &quot;Conv2D&quot;:</span>
+<span class="s2">      self.eightbitize_conv_node(current_node)</span>
+<span class="s2">    elif current_node.op == &quot;BiasAdd&quot;:</span>
+<span class="s2">      self.eightbitize_bias_add_node(current_node)</span>
+<span class="s2">    elif current_node.op == &quot;MaxPool&quot; or current_node.op == &quot;AvgPool&quot;:</span>
+<span class="s2">      self.eightbitize_single_input_tensor_node(current_node,</span>
+<span class="s2">                                                self.add_pool_function)</span>
+<span class="s2">    elif current_node.op == &quot;Relu&quot; or current_node.op == &quot;Relu6&quot;:</span>
+<span class="s2">      self.eightbitize_single_input_tensor_node(current_node,</span>
+<span class="s2">                                                self.add_relu_function)</span>
+<span class="s2">    elif (current_node.op == &quot;Concat&quot; and</span>
+<span class="s2">          dtypes.as_dtype(current_node.attr[&quot;T&quot;].type) == dtypes.float32):</span>
+<span class="s2">      self.eightbitize_concat_node(current_node)</span>
+<span class="s2">    elif current_node.op == &quot;BatchNormWithGlobalNormalization&quot;:</span>
+<span class="s2">      self.eightbitize_batch_norm_node(current_node)</span>
+<span class="s2">    elif (current_node.op == &quot;Reshape&quot; and</span>
+<span class="s2">          dtypes.as_dtype(current_node.attr[&quot;T&quot;].type) == dtypes.float32):</span>
+<span class="s2">      self.eightbitize_reshape_node(current_node)</span>
+<span class="s2">    elif (self.input_range and</span>
+<span class="s2">          current_node.op in (&quot;Placeholder&quot;, &quot;PlaceholderV2&quot;)):</span>
+<span class="s2">      self.eightbitize_placeholder_node(current_node)</span>
+<span class="s2">    elif current_node.op == &quot;FakeQuantWithMinMaxVars&quot;:</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">      pass</span>
+<span class="s2">    elif current_node.op == &quot;Const&quot;:</span>
+<span class="s2">      if self.should_quantize_const(current_node):</span>
+<span class="s2">        for n in quantize_weight_eightbit(current_node, b&quot;MIN_FIRST&quot;):</span>
+<span class="s2">          self.add_output_graph_node(n)</span>
+<span class="s2">      else:</span>
+<span class="s2">        new_node = node_def_pb2.NodeDef()</span>
+<span class="s2">        new_node.CopyFrom(current_node)</span>
+<span class="s2">        self.add_output_graph_node(new_node)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    else:</span>
+<span class="s2">      new_node = node_def_pb2.NodeDef()</span>
+<span class="s2">      new_node.CopyFrom(current_node)</span>
+<span class="s2">      self.add_output_graph_node(new_node)</span>
+
+<span class="s2">    if (self.should_merge_with_fake_quant_node() and</span>
+<span class="s2">        current_node.name not in self.state.merged_with_fake_quant):</span>
+<span class="s2">      raise ValueError(</span>
+<span class="s2">          &quot;FakeQuant* node </span><span class="si">%s</span><span class="s2"> failed to merge with node </span><span class="si">%s</span><span class="s2"> of type </span><span class="si">%s</span><span class="s2">&quot; %</span>
+<span class="s2">          (self.state.output_node_stack[-1][0], current_node.name,</span>
+<span class="s2">           current_node.op))</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def add_eightbit_prologue_nodes(self, original_node):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    namespace_prefix = original_node.name + &quot;_eightbit&quot;</span>
+<span class="s2">    reshape_dims_name, reduction_dims_name = self.add_common_quantization_nodes(</span>
+<span class="s2">        namespace_prefix)</span>
+<span class="s2">    input_names = []</span>
+<span class="s2">    min_max_names = []</span>
+<span class="s2">    for original_input_name in original_node.input:</span>
+<span class="s2">      quantize_input_name, min_input_name, max_input_name = (</span>
+<span class="s2">          self.eightbitize_input_to_node(namespace_prefix, original_input_name,</span>
+<span class="s2">                                         reshape_dims_name,</span>
+<span class="s2">                                         reduction_dims_name))</span>
+<span class="s2">      input_names.append(quantize_input_name)</span>
+<span class="s2">      min_max_names.append(min_input_name)</span>
+<span class="s2">      min_max_names.append(max_input_name)</span>
+<span class="s2">    all_input_names = []</span>
+<span class="s2">    all_input_names.extend(input_names)</span>
+<span class="s2">    all_input_names.extend(min_max_names)</span>
+<span class="s2">    return all_input_names</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def add_common_quantization_nodes(self, namespace_prefix):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    reshape_dims_name = namespace_prefix + &quot;_reshape_dims&quot;</span>
+<span class="s2">    reduction_dims_name = namespace_prefix + &quot;_reduction_dims&quot;</span>
+
+<span class="s2">    reshape_dims_node = create_constant_node(reshape_dims_name, -1,</span>
+<span class="s2">                                             dtypes.int32, [1])</span>
+<span class="s2">    self.add_output_graph_node(reshape_dims_node)</span>
+<span class="s2">    reduction_dims_node = create_constant_node(reduction_dims_name, 0,</span>
+<span class="s2">                                               dtypes.int32, [1])</span>
+<span class="s2">    self.add_output_graph_node(reduction_dims_node)</span>
+<span class="s2">    return reshape_dims_name, reduction_dims_name</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def eightbitize_input_to_node(self, namespace_prefix, original_input_name,</span>
+<span class="s2">                                reshape_dims_name, reduction_dims_name):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    unique_input_name = unique_node_name_from_input(original_input_name)</span>
+<span class="s2">    reshape_input_name = namespace_prefix + &quot;_reshape_&quot; + unique_input_name</span>
+<span class="s2">    min_input_name = namespace_prefix + &quot;_min_&quot; + unique_input_name</span>
+<span class="s2">    max_input_name = namespace_prefix + &quot;_max_&quot; + unique_input_name</span>
+<span class="s2">    quantize_input_name = namespace_prefix + &quot;_quantize_&quot; + unique_input_name</span>
+<span class="s2">    reshape_input_node = create_node(&quot;Reshape&quot;, reshape_input_name,</span>
+<span class="s2">                                     [original_input_name, reshape_dims_name])</span>
+<span class="s2">    set_attr_dtype(reshape_input_node, &quot;T&quot;, dtypes.float32)</span>
+<span class="s2">    self.add_output_graph_node(reshape_input_node)</span>
+<span class="s2">    min_input_node = create_node(&quot;Min&quot;, min_input_name,</span>
+<span class="s2">                                 [reshape_input_name, reduction_dims_name])</span>
+<span class="s2">    set_attr_dtype(min_input_node, &quot;T&quot;, dtypes.float32)</span>
+<span class="s2">    set_attr_bool(min_input_node, &quot;keep_dims&quot;, False)</span>
+<span class="s2">    self.add_output_graph_node(min_input_node)</span>
+<span class="s2">    max_input_node = create_node(&quot;Max&quot;, max_input_name,</span>
+<span class="s2">                                 [reshape_input_name, reduction_dims_name])</span>
+<span class="s2">    set_attr_dtype(max_input_node, &quot;T&quot;, dtypes.float32)</span>
+<span class="s2">    set_attr_bool(max_input_node, &quot;keep_dims&quot;, False)</span>
+<span class="s2">    self.add_output_graph_node(max_input_node)</span>
+<span class="s2">    quantize_input_node = create_node(</span>
+<span class="s2">        &quot;QuantizeV2&quot;, quantize_input_name,</span>
+<span class="s2">        [original_input_name, min_input_name, max_input_name])</span>
+<span class="s2">    set_attr_dtype(quantize_input_node, &quot;T&quot;, dtypes.quint8)</span>
+<span class="s2">    set_attr_string(quantize_input_node, &quot;mode&quot;, b&quot;MIN_FIRST&quot;)</span>
+<span class="s2">    self.add_output_graph_node(quantize_input_node)</span>
+<span class="s2">    min_output_name = quantize_input_name + &quot;:1&quot;</span>
+<span class="s2">    max_output_name = quantize_input_name + &quot;:2&quot;</span>
+<span class="s2">    return quantize_input_name, min_output_name, max_output_name</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def add_quantize_down_nodes(self, original_node, quantized_output_name):</span>
+<span class="s2">    quantized_outputs = [</span>
+<span class="s2">        quantized_output_name, quantized_output_name + &quot;:1&quot;,</span>
+<span class="s2">        quantized_output_name + &quot;:2&quot;</span>
+<span class="s2">    ]</span>
+<span class="s2">    min_max_inputs = None</span>
+<span class="s2">    if self.should_merge_with_fake_quant_node():</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">      fake_quant_node = self.state.output_node_stack[-1][0]</span>
+<span class="s2">      min_max_inputs = [fake_quant_node.input[1], fake_quant_node.input[2]]</span>
+<span class="s2">      assert original_node.name not in self.state.merged_with_fake_quant</span>
+<span class="s2">      self.state.merged_with_fake_quant[original_node.name] = True</span>
+<span class="s2">    elif self.fallback_quantization_range:</span>
+<span class="s2">      min_max_inputs = [</span>
+<span class="s2">          &quot;fallback_quantization_min_value:0&quot;,</span>
+<span class="s2">          &quot;fallback_quantization_max_value:0&quot;</span>
+<span class="s2">      ]</span>
+<span class="s2">    else:</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">      requant_range_node = create_node(</span>
+<span class="s2">          &quot;RequantizationRange&quot;, original_node.name + &quot;_eightbit_requant_range&quot;,</span>
+<span class="s2">          quantized_outputs)</span>
+<span class="s2">      set_attr_dtype(requant_range_node, &quot;Tinput&quot;, dtypes.qint32)</span>
+<span class="s2">      self.add_output_graph_node(requant_range_node)</span>
+<span class="s2">      min_max_inputs = [</span>
+<span class="s2">          requant_range_node.name + &quot;:0&quot;, requant_range_node.name + &quot;:1&quot;</span>
+<span class="s2">      ]</span>
+<span class="s2">    requantize_node = create_node(&quot;Requantize&quot;,</span>
+<span class="s2">                                  original_node.name + &quot;_eightbit_requantize&quot;,</span>
+<span class="s2">                                  quantized_outputs + min_max_inputs)</span>
+<span class="s2">    set_attr_dtype(requantize_node, &quot;Tinput&quot;, dtypes.qint32)</span>
+<span class="s2">    set_attr_dtype(requantize_node, &quot;out_type&quot;, dtypes.quint8)</span>
+<span class="s2">    self.add_output_graph_node(requantize_node)</span>
+<span class="s2">    return requantize_node.name</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def add_dequantize_result_node(self,</span>
+<span class="s2">                                 quantized_output_name,</span>
+<span class="s2">                                 original_node_name,</span>
+<span class="s2">                                 min_tensor_index=1):</span>
+<span class="s2">    min_max_inputs = [</span>
+<span class="s2">        &quot;</span><span class="si">%s</span><span class="s2">:</span><span class="si">%s</span><span class="s2">&quot; % (quantized_output_name, min_tensor_index),</span>
+<span class="s2">        &quot;</span><span class="si">%s</span><span class="s2">:</span><span class="si">%s</span><span class="s2">&quot; % (quantized_output_name, (min_tensor_index + 1))</span>
+<span class="s2">    ]</span>
+<span class="s2">    dequantize_name = original_node_name</span>
+<span class="s2">    if self.should_merge_with_fake_quant_node():</span>
+<span class="s2">      fake_quant_node = self.state.output_node_stack[-1][0]</span>
+<span class="s2">      if original_node_name not in self.state.merged_with_fake_quant:</span>
+<span class="s2">        min_max_inputs = [fake_quant_node.input[1], fake_quant_node.input[2]]</span>
+<span class="s2">        self.state.merged_with_fake_quant[original_node_name] = True</span>
+<span class="s2">      dequantize_name = fake_quant_node.name</span>
+
+<span class="s2">    dequantize_node = create_node(</span>
+<span class="s2">        &quot;Dequantize&quot;, dequantize_name,</span>
+<span class="s2">        [quantized_output_name, min_max_inputs[0], min_max_inputs[1]])</span>
+<span class="s2">    set_attr_dtype(dequantize_node, &quot;T&quot;, dtypes.quint8)</span>
+<span class="s2">    set_attr_string(dequantize_node, &quot;mode&quot;, b&quot;MIN_FIRST&quot;)</span>
+<span class="s2">    self.add_output_graph_node(dequantize_node)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def eightbitize_mat_mul_node(self, original_node):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    quantized_mat_mul_name = original_node.name + &quot;_eightbit_quantized_mat_mul&quot;</span>
+<span class="s2">    all_input_names = self.add_eightbit_prologue_nodes(original_node)</span>
+<span class="s2">    quantized_mat_mul_node = create_node(&quot;QuantizedMatMul&quot;,</span>
+<span class="s2">                                         quantized_mat_mul_name,</span>
+<span class="s2">                                         all_input_names)</span>
+<span class="s2">    set_attr_dtype(quantized_mat_mul_node, &quot;T1&quot;, dtypes.quint8)</span>
+<span class="s2">    set_attr_dtype(quantized_mat_mul_node, &quot;T2&quot;, dtypes.quint8)</span>
+<span class="s2">    set_attr_dtype(quantized_mat_mul_node, &quot;Toutput&quot;, dtypes.qint32)</span>
+<span class="s2">    copy_attr(quantized_mat_mul_node, &quot;transpose_a&quot;,</span>
+<span class="s2">              original_node.attr[&quot;transpose_a&quot;])</span>
+<span class="s2">    copy_attr(quantized_mat_mul_node, &quot;transpose_b&quot;,</span>
+<span class="s2">              original_node.attr[&quot;transpose_b&quot;])</span>
+<span class="s2">    self.add_output_graph_node(quantized_mat_mul_node)</span>
+<span class="s2">    quantize_down_name = self.add_quantize_down_nodes(original_node,</span>
+<span class="s2">                                                      quantized_mat_mul_name)</span>
+<span class="s2">    self.add_dequantize_result_node(quantize_down_name, original_node.name)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def eightbitize_conv_node(self, original_node):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    all_input_names = self.add_eightbit_prologue_nodes(original_node)</span>
+<span class="s2">    quantized_conv_name = original_node.name + &quot;_eightbit_quantized_conv&quot;</span>
+<span class="s2">    quantized_conv_node = create_node(&quot;QuantizedConv2D&quot;, quantized_conv_name,</span>
+<span class="s2">                                      all_input_names)</span>
+<span class="s2">    copy_attr(quantized_conv_node, &quot;strides&quot;, original_node.attr[&quot;strides&quot;])</span>
+<span class="s2">    copy_attr(quantized_conv_node, &quot;padding&quot;, original_node.attr[&quot;padding&quot;])</span>
+<span class="s2">    set_attr_dtype(quantized_conv_node, &quot;Tinput&quot;, dtypes.quint8)</span>
+<span class="s2">    set_attr_dtype(quantized_conv_node, &quot;Tfilter&quot;, dtypes.quint8)</span>
+<span class="s2">    set_attr_dtype(quantized_conv_node, &quot;out_type&quot;, dtypes.qint32)</span>
+<span class="s2">    self.add_output_graph_node(quantized_conv_node)</span>
+<span class="s2">    quantize_down_name = self.add_quantize_down_nodes(original_node,</span>
+<span class="s2">                                                      quantized_conv_name)</span>
+<span class="s2">    self.add_dequantize_result_node(quantize_down_name, original_node.name)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def eightbitize_bias_add_node(self, original_node):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    quantized_bias_add_name = (</span>
+<span class="s2">        original_node.name + &quot;_eightbit_quantized_bias_add&quot;)</span>
+<span class="s2">    all_input_names = self.add_eightbit_prologue_nodes(original_node)</span>
+<span class="s2">    quantized_bias_add_node = create_node(&quot;QuantizedBiasAdd&quot;,</span>
+<span class="s2">                                          quantized_bias_add_name,</span>
+<span class="s2">                                          all_input_names)</span>
+<span class="s2">    set_attr_dtype(quantized_bias_add_node, &quot;T1&quot;, dtypes.quint8)</span>
+<span class="s2">    set_attr_dtype(quantized_bias_add_node, &quot;T2&quot;, dtypes.quint8)</span>
+<span class="s2">    set_attr_dtype(quantized_bias_add_node, &quot;out_type&quot;, dtypes.qint32)</span>
+<span class="s2">    self.add_output_graph_node(quantized_bias_add_node)</span>
+<span class="s2">    quantize_down_name = self.add_quantize_down_nodes(original_node,</span>
+<span class="s2">                                                      quantized_bias_add_name)</span>
+<span class="s2">    self.add_dequantize_result_node(quantize_down_name, original_node.name)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def eightbitize_single_input_tensor_node(self, original_node,</span>
+<span class="s2">                                           add_op_function):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    quantized_op_name = original_node.name + &quot;_eightbit_quantized&quot;</span>
+<span class="s2">    quantized_op_type = &quot;Quantized&quot; + original_node.op</span>
+<span class="s2">    all_input_names = self.add_eightbit_prologue_nodes(original_node)</span>
+<span class="s2">    quantized_op_node = create_node(quantized_op_type, quantized_op_name,</span>
+<span class="s2">                                    all_input_names)</span>
+<span class="s2">    add_op_function(original_node, quantized_op_node)</span>
+<span class="s2">    self.add_output_graph_node(quantized_op_node)</span>
+<span class="s2">    self.add_dequantize_result_node(quantized_op_name, original_node.name)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def add_pool_function(self, original_node, quantized_op_node):</span>
+<span class="s2">    set_attr_dtype(quantized_op_node, &quot;T&quot;, dtypes.quint8)</span>
+<span class="s2">    copy_attr(quantized_op_node, &quot;ksize&quot;, original_node.attr[&quot;ksize&quot;])</span>
+<span class="s2">    copy_attr(quantized_op_node, &quot;strides&quot;, original_node.attr[&quot;strides&quot;])</span>
+<span class="s2">    copy_attr(quantized_op_node, &quot;padding&quot;, original_node.attr[&quot;padding&quot;])</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def add_relu_function(self, unused_arg_node, quantized_op_node):</span>
+<span class="s2">    set_attr_dtype(quantized_op_node, &quot;Tinput&quot;, dtypes.quint8)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def eightbitize_concat_node(self, original_node):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    namespace_prefix = original_node.name + &quot;_eightbit&quot;</span>
+<span class="s2">    quantized_concat_name = namespace_prefix + &quot;_quantized_concat&quot;</span>
+<span class="s2">    reshape_dims_name, reduction_dims_name = self.add_common_quantization_nodes(</span>
+<span class="s2">        namespace_prefix)</span>
+<span class="s2">    shape_input_name = original_node.input[0]</span>
+<span class="s2">    original_inputs = original_node.input[1:]</span>
+<span class="s2">    input_names = []</span>
+<span class="s2">    min_names = []</span>
+<span class="s2">    max_names = []</span>
+<span class="s2">    for original_input_name in original_inputs:</span>
+<span class="s2">      quantize_input_name, min_input_name, max_input_name = (</span>
+<span class="s2">          self.eightbitize_input_to_node(namespace_prefix, original_input_name,</span>
+<span class="s2">                                         reshape_dims_name,</span>
+<span class="s2">                                         reduction_dims_name))</span>
+<span class="s2">      input_names.append(quantize_input_name)</span>
+<span class="s2">      min_names.append(min_input_name)</span>
+<span class="s2">      max_names.append(max_input_name)</span>
+<span class="s2">    all_input_names = [shape_input_name]</span>
+<span class="s2">    all_input_names.extend(input_names)</span>
+<span class="s2">    all_input_names.extend(min_names)</span>
+<span class="s2">    all_input_names.extend(max_names)</span>
+<span class="s2">    quantized_concat_node = create_node(&quot;QuantizedConcat&quot;,</span>
+<span class="s2">                                        quantized_concat_name, all_input_names)</span>
+<span class="s2">    set_attr_int(quantized_concat_node, &quot;N&quot;, len(original_inputs))</span>
+<span class="s2">    set_attr_dtype(quantized_concat_node, &quot;T&quot;, dtypes.quint8)</span>
+<span class="s2">    self.add_output_graph_node(quantized_concat_node)</span>
+<span class="s2">    self.add_dequantize_result_node(quantized_concat_name, original_node.name)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def eightbitize_placeholder_node(self, current_node):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    name = current_node.name</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    output_node = node_def_pb2.NodeDef()</span>
+<span class="s2">    output_node.CopyFrom(current_node)</span>
+<span class="s2">    set_attr_dtype(output_node, &quot;dtype&quot;, dtypes.quint8)</span>
+<span class="s2">    output_node.name += &quot;_original_input&quot;</span>
+<span class="s2">    self.add_output_graph_node(output_node)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    dequantize_node = create_node(&quot;Dequantize&quot;, name, [</span>
+<span class="s2">        output_node.name, &quot;quantized_input_min_value&quot;,</span>
+<span class="s2">        &quot;quantized_input_max_value&quot;</span>
+<span class="s2">    ])</span>
+<span class="s2">    set_attr_dtype(dequantize_node, &quot;T&quot;, dtypes.quint8)</span>
+<span class="s2">    set_attr_string(dequantize_node, &quot;mode&quot;, b&quot;MIN_FIRST&quot;)</span>
+<span class="s2">    self.add_output_graph_node(dequantize_node)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    self.final_node_renames[output_node.name] = name</span>
+<span class="s2">    self.final_node_renames[dequantize_node.name] = name + &quot;_dequantize&quot;</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def eightbitize_reshape_node(self, original_node):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    namespace_prefix = original_node.name + &quot;_eightbit&quot;</span>
+<span class="s2">    quantized_reshape_name = namespace_prefix + &quot;_quantized_reshape&quot;</span>
+<span class="s2">    reshape_dims_name, reduction_dims_name = self.add_common_quantization_nodes(</span>
+<span class="s2">        namespace_prefix)</span>
+<span class="s2">    shape_input_name = original_node.input[1]</span>
+<span class="s2">    quantize_input_name, min_input_name, max_input_name = (</span>
+<span class="s2">        self.eightbitize_input_to_node(namespace_prefix, original_node.input[0],</span>
+<span class="s2">                                       reshape_dims_name, reduction_dims_name))</span>
+<span class="s2">    quantized_reshape_node = create_node(</span>
+<span class="s2">        &quot;QuantizedReshape&quot;, quantized_reshape_name,</span>
+<span class="s2">        [quantize_input_name, shape_input_name, min_input_name, max_input_name])</span>
+<span class="s2">    set_attr_dtype(quantized_reshape_node, &quot;T&quot;, dtypes.quint8)</span>
+<span class="s2">    self.add_output_graph_node(quantized_reshape_node)</span>
+<span class="s2">    self.add_dequantize_result_node(quantized_reshape_name, original_node.name)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def eightbitize_batch_norm_node(self, original_node):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    namespace_prefix = original_node.name + &quot;_eightbit&quot;</span>
+<span class="s2">    original_input_name = original_node.input[0]</span>
+<span class="s2">    original_mean_name = original_node.input[1]</span>
+<span class="s2">    original_variance_name = original_node.input[2]</span>
+<span class="s2">    original_beta_name = original_node.input[3]</span>
+<span class="s2">    original_gamma_name = original_node.input[4]</span>
+<span class="s2">    quantized_batch_norm_name = namespace_prefix + &quot;_quantized_batch_norm&quot;</span>
+
+<span class="s2">    reshape_dims_name, reduction_dims_name = self.add_common_quantization_nodes(</span>
+<span class="s2">        namespace_prefix)</span>
+<span class="s2">    quantize_input_name, min_input_name, max_input_name = (</span>
+<span class="s2">        self.eightbitize_input_to_node(namespace_prefix, original_input_name,</span>
+<span class="s2">                                       reshape_dims_name, reduction_dims_name))</span>
+<span class="s2">    quantize_mean_name, min_mean_name, max_mean_name = (</span>
+<span class="s2">        self.eightbitize_input_to_node(namespace_prefix, original_mean_name,</span>
+<span class="s2">                                       reshape_dims_name, reduction_dims_name))</span>
+<span class="s2">    quantize_variance_name, min_variance_name, max_variance_name = (</span>
+<span class="s2">        self.eightbitize_input_to_node(namespace_prefix, original_variance_name,</span>
+<span class="s2">                                       reshape_dims_name, reduction_dims_name))</span>
+<span class="s2">    quantize_beta_name, min_beta_name, max_beta_name = (</span>
+<span class="s2">        self.eightbitize_input_to_node(namespace_prefix, original_beta_name,</span>
+<span class="s2">                                       reshape_dims_name, reduction_dims_name))</span>
+<span class="s2">    quantize_gamma_name, min_gamma_name, max_gamma_name = (</span>
+<span class="s2">        self.eightbitize_input_to_node(namespace_prefix, original_gamma_name,</span>
+<span class="s2">                                       reshape_dims_name, reduction_dims_name))</span>
+<span class="s2">    quantized_batch_norm_node = create_node(</span>
+<span class="s2">        &quot;QuantizedBatchNormWithGlobalNormalization&quot;, quantized_batch_norm_name,</span>
+<span class="s2">        [</span>
+<span class="s2">            quantize_input_name, min_input_name, max_input_name,</span>
+<span class="s2">            quantize_mean_name, min_mean_name, max_mean_name,</span>
+<span class="s2">            quantize_variance_name, min_variance_name, max_variance_name,</span>
+<span class="s2">            quantize_beta_name, min_beta_name, max_beta_name,</span>
+<span class="s2">            quantize_gamma_name, min_gamma_name, max_gamma_name</span>
+<span class="s2">        ])</span>
+<span class="s2">    set_attr_dtype(quantized_batch_norm_node, &quot;Tinput&quot;, dtypes.quint8)</span>
+<span class="s2">    set_attr_dtype(quantized_batch_norm_node, &quot;out_type&quot;, dtypes.qint32)</span>
+<span class="s2">    copy_attr(quantized_batch_norm_node, &quot;scale_after_normalization&quot;,</span>
+<span class="s2">              original_node.attr[&quot;scale_after_normalization&quot;])</span>
+<span class="s2">    copy_attr(quantized_batch_norm_node, &quot;variance_epsilon&quot;,</span>
+<span class="s2">              original_node.attr[&quot;variance_epsilon&quot;])</span>
+<span class="s2">    self.add_output_graph_node(quantized_batch_norm_node)</span>
+<span class="s2">    quantize_down_name = self.add_quantize_down_nodes(original_node,</span>
+<span class="s2">                                                      quantized_batch_norm_name)</span>
+<span class="s2">    self.add_dequantize_result_node(quantize_down_name, original_node.name)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def add_output_graph_node(self, output_node):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    self.output_graph.node.extend([output_node])</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def remove_redundant_quantization(self, old_graph):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    old_nodes_map = self.create_nodes_map(old_graph)</span>
+<span class="s2">    self.output_graph = graph_pb2.GraphDef()</span>
+<span class="s2">    inputs_to_rename = </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    for node in old_graph.node:</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">      if node.op not in [&quot;Quantize&quot;, &quot;QuantizeV2&quot;]:</span>
+<span class="s2">        continue</span>
+<span class="s2">      dequantize_node_name = node_name_from_input(node.input[0])</span>
+<span class="s2">      if dequantize_node_name not in old_nodes_map:</span>
+<span class="s2">        raise ValueError(&quot;Input node name &#39;&quot; + dequantize_node_name +</span>
+<span class="s2">                         &quot;&#39; not found in node &#39;&quot; + node.name + &quot;&#39;&quot;)</span>
+<span class="s2">      dequantize_node = old_nodes_map[dequantize_node_name]</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">      if dequantize_node.op != &quot;Dequantize&quot;:</span>
+<span class="s2">        continue</span>
+<span class="s2">      if node.attr[&quot;T&quot;] != dequantize_node.attr[&quot;T&quot;]:</span>
+<span class="s2">        continue</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">      min_node_name = node_name_from_input(node.input[1])</span>
+<span class="s2">      max_node_name = node_name_from_input(node.input[2])</span>
+<span class="s2">      min_node = old_nodes_map[min_node_name]</span>
+<span class="s2">      max_node = old_nodes_map[max_node_name]</span>
+<span class="s2">      is_min_right_type = (min_node.op in [&quot;Min&quot;, &quot;Dequantize&quot;])</span>
+<span class="s2">      is_max_right_type = (max_node.op in [&quot;Max&quot;, &quot;Dequantize&quot;])</span>
+<span class="s2">      if not is_min_right_type or not is_max_right_type:</span>
+<span class="s2">        print(&quot;Didn&#39;t find expected types on inputs : </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">.&quot; % (min_node.op,</span>
+<span class="s2">                                                                  max_node.op))</span>
+<span class="s2">        continue</span>
+<span class="s2">      min_node_input_name = node_name_from_input(min_node.input[0])</span>
+<span class="s2">      max_node_input_name = node_name_from_input(max_node.input[0])</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">      is_same_input = False</span>
+<span class="s2">      if min_node_input_name == max_node_input_name:</span>
+<span class="s2">        is_same_input = True</span>
+<span class="s2">      else:</span>
+<span class="s2">        first_min_node_input = old_nodes_map[min_node_input_name]</span>
+<span class="s2">        if first_min_node_input.op == &quot;Concat&quot;:</span>
+<span class="s2">          second_min_node_name = node_name_from_input(</span>
+<span class="s2">              first_min_node_input.input[1])</span>
+<span class="s2">          second_min_node = old_nodes_map[second_min_node_name]</span>
+<span class="s2">          if second_min_node.op == &quot;Min&quot;:</span>
+<span class="s2">            second_min_node_input_name = node_name_from_input(</span>
+<span class="s2">                second_min_node.input[0])</span>
+<span class="s2">            is_same_input = (second_min_node_input_name == max_node_input_name)</span>
+<span class="s2">      if not is_same_input:</span>
+<span class="s2">        print(&quot;Different min/max inputs: &quot; + min_node_input_name)</span>
+<span class="s2">        continue</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">      dequantize_source_name = node_name_from_input(dequantize_node.input[0])</span>
+<span class="s2">      node_tensor_name = ensure_tensor_name_has_port(node.name)</span>
+<span class="s2">      min_tensor_name = node.name + &quot;:1&quot;</span>
+<span class="s2">      max_tensor_name = node.name + &quot;:2&quot;</span>
+<span class="s2">      inputs_to_rename[node_tensor_name] = dequantize_source_name</span>
+<span class="s2">      inputs_to_rename[min_tensor_name] = dequantize_node.input[1]</span>
+<span class="s2">      inputs_to_rename[max_tensor_name] = dequantize_node.input[2]</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    for node in old_graph.node:</span>
+<span class="s2">      for index, input_full_name in enumerate(node.input):</span>
+<span class="s2">        input_name = ensure_tensor_name_has_port(input_full_name)</span>
+<span class="s2">        if input_name in inputs_to_rename:</span>
+<span class="s2">          node.input[index] = inputs_to_rename[input_name]</span>
+<span class="s2">      self.add_output_graph_node(node)</span>
+<span class="s2">    return self.output_graph</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def apply_final_node_renames(self):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    old_graph = self.output_graph</span>
+<span class="s2">    self.output_graph = graph_pb2.GraphDef()</span>
+<span class="s2">    for node in old_graph.node:</span>
+<span class="s2">      node.name = self.final_node_renames.get(node.name, node.name)</span>
+<span class="s2">      for index, input_name in enumerate(node.input):</span>
+<span class="s2">        node_name = node_name_from_input(input_name)</span>
+<span class="s2">        input_full_name = ensure_tensor_name_has_port(input_name)</span>
+<span class="s2">        if node_name in self.final_node_renames:</span>
+<span class="s2">          node.input[index] = &quot;</span><span class="si">%s%s</span><span class="s2">&quot; % (self.final_node_renames[node_name],</span>
+<span class="s2">                                        input_full_name[len(node_name):])</span>
+<span class="s2">      self.add_output_graph_node(node)</span>
+<span class="s2">    return self.output_graph</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def remove_dead_nodes(self, output_names):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    old_output_graph = self.output_graph</span>
+<span class="s2">    self.output_graph = graph_util.extract_sub_graph(old_output_graph,</span>
+<span class="s2">                                                     output_names)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def quantize_weights(self, input_graph, quantization_mode):</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">    output_graph = graph_pb2.GraphDef()</span>
+<span class="s2">    for input_node in input_graph.node:</span>
+<span class="s2">      should_quantize = False</span>
+<span class="s2">      if input_node.op == &quot;Const&quot;:</span>
+<span class="s2">        dtype = dtypes.as_dtype(input_node.attr[&quot;dtype&quot;].type)</span>
+<span class="s2">        if dtype == dtypes.float32:</span>
+<span class="s2">          should_quantize = True</span>
+<span class="s2">      if should_quantize:</span>
+<span class="s2">        if quantization_mode == &quot;weights_rounded&quot;:</span>
+<span class="s2">          output_graph.node.extend(quantize_weight_rounded(input_node))</span>
+<span class="s2">        elif quantization_mode in (b&quot;MIN_COMBINED&quot;, b&quot;MIN_FIRST&quot;):</span>
+<span class="s2">          output_graph.node.extend(</span>
+<span class="s2">              quantize_weight_eightbit(input_node, quantization_mode))</span>
+<span class="s2">        else:</span>
+<span class="s2">          raise ValueError(&quot;Unsupported quantization mode </span><span class="si">%s</span><span class="s2">.&quot; %</span>
+<span class="s2">                           quantization_mode)</span>
+<span class="s2">      else:</span>
+<span class="s2">        output_node = node_def_pb2.NodeDef()</span>
+<span class="s2">        output_node.CopyFrom(input_node)</span>
+<span class="s2">        output_graph.node.extend([output_node])</span>
+<span class="s2">    return output_graph</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">  def set_input_graph(self, new_input_graph):</span>
+<span class="s2">    self.input_graph = new_input_graph</span>
+<span class="s2">    self.nodes_map = self.create_nodes_map(self.input_graph)</span>
+<span class="s2">#DIVIDER</span>
+<span class="s2">def main(unused_args):</span>
+<span class="s2">  if not gfile.Exists(FLAGS.input):</span>
+<span class="s2">    print(&quot;Input graph file &#39;&quot; + FLAGS.input + &quot;&#39; does not exist!&quot;)</span>
+<span class="s2">    return -1</span>
+
+<span class="s2">  known_modes = [</span>
+<span class="s2">      &quot;round&quot;, &quot;quantize&quot;, &quot;eightbit&quot;, &quot;weights&quot;, &quot;test&quot;, &quot;weights_rounded&quot;</span>
+<span class="s2">  ]</span>
+<span class="s2">  if not any(FLAGS.mode in s for s in known_modes):</span>
+<span class="s2">    print(&quot;mode is &#39;&quot; + FLAGS.mode + &quot;&#39;, not in &quot; + &quot;, &quot;.join(known_modes) +</span>
+<span class="s2">          &quot;.&quot;)</span>
+<span class="s2">    return -1</span>
+
+<span class="s2">  tf_graph = graph_pb2.GraphDef()</span>
+<span class="s2">  with gfile.Open(FLAGS.input, &quot;rb&quot;) as f:</span>
+<span class="s2">    data = f.read()</span>
+<span class="s2">    tf_graph.ParseFromString(data)</span>
+
+<span class="s2">  graph = ops.Graph()</span>
+<span class="s2">  with graph.as_default():</span>
+<span class="s2">    importer.import_graph_def(tf_graph, input_map=</span><span class="si">{}</span><span class="s2">, name=&quot;&quot;)</span>
+
+<span class="s2">  quantized_input_range = None</span>
+<span class="s2">  if FLAGS.quantized_input:</span>
+<span class="s2">    quantized_input_range = [</span>
+<span class="s2">        FLAGS.quantized_input_min, FLAGS.quantized_input_max</span>
+<span class="s2">    ]</span>
+
+<span class="s2">  fallback_quantization_range = None</span>
+<span class="s2">  if (FLAGS.quantized_fallback_min is not None or</span>
+<span class="s2">      FLAGS.quantized_fallback_max is not None):</span>
+<span class="s2">    assert FLAGS.quantized_fallback_min is not None</span>
+<span class="s2">    assert FLAGS.quantized_fallback_max is not None</span>
+<span class="s2">    fallback_quantization_range = [</span>
+<span class="s2">        FLAGS.quantized_fallback_min, FLAGS.quantized_fallback_max</span>
+<span class="s2">    ]</span>
+
+<span class="s2">  rewriter = GraphRewriter(tf_graph, FLAGS.mode, quantized_input_range,</span>
+<span class="s2">                           fallback_quantization_range)</span>
+
+<span class="s2">  output_graph = rewriter.rewrite(FLAGS.output_node_names.split(&quot;,&quot;))</span>
+
+<span class="s2">  f = gfile.FastGFile(FLAGS.output, &quot;wb&quot;)</span>
+<span class="s2">  f.write(output_graph.SerializeToString())</span>
+
+<span class="s2">  return 0</span>
+
+
+<span class="s2">if __name__ == &quot;__main__&quot;:</span>
+<span class="s2">  os.environ[&#39;TF_CPP_MIN_LOG_LEVEL&#39;] = &#39;2&#39;</span>
+<span class="s2">  app.run()</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <p>from <strong>future</strong> import absolute_import
+from <strong>future</strong> import division
+from <strong>future</strong> import print_function</p>
+<p>import os
+import collections
+import re
+import numpy as np</p>
+<p>from tensorflow.core.framework import attr_value_pb2
+from tensorflow.core.framework import graph_pb2
+from tensorflow.core.framework import node_def_pb2
+from tensorflow.python.client import session
+from tensorflow.python.framework import constant_op
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import graph_util
+from tensorflow.python.framework import importer
+from tensorflow.python.framework import ops
+from tensorflow.python.framework import tensor_shape
+from tensorflow.python.framework import tensor_util
+from tensorflow.python.ops import array_ops
+from tensorflow.python.platform import app
+from tensorflow.python.platform import flags as flags_lib
+from tensorflow.python.platform import gfile</p>
+<p>flags = flags_lib
+FLAGS = flags.FLAGS</p>
+<p>flags.DEFINE_boolean("print_nodes", False, """Lists all nodes in the model.""")
+flags.DEFINE_string("input", "", """TensorFlow 'GraphDef' file to load.""")
+flags.DEFINE_string("output_node_names", "",
+Output node names, comma separated.)
+How many bits to quantize the graph to.)</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>flags.DEFINE_string("mode", "round",
+What transformation to apply (round, quantize,
+eightbit, weights, or weights_rounded).)
+flags.DEFINE_string("test_input_dims", "1,224,224,3",
+The size of the input tensor to use when testing a
+graph loaded from a file.)
+flags.DEFINE_boolean("strip_redundant_quantization", True,
+Removes redundant dequantize/quantize pairs.)</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-10'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-10'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-11'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-11'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-12'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-12'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-13'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-13'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-14'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-14'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-15'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-15'>#</a>
+      </div>
+      <p>Strips off ports and other decorations to get the underlying node name.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-16'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-16'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-17'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-17'>#</a>
+      </div>
+      <p>Makes sure that a tensor name has :0 if no explicit port exists.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-18'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-18'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-19'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-19'>#</a>
+      </div>
+      <p>Replaces invalid characters in input names to get a unique node name.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-20'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-20'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-21'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-21'>#</a>
+      </div>
+      <p>Quantizes a numpy array.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-22'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-22'>#</a>
+      </div>
+      <p>This function maps each scalar in arr to the center of one of num_buckets
+buckets. For instance,
+quantize_array([0, 0.3, 0.6, 1], 2) =&gt; [0.25, 0.25, 0.75, 0.75]</p>
+<p>Args:
+  arr: The numpy array to quantize.
+  num_buckets: The number of buckets to map "var" to.
+Returns:
+  The quantized numpy array.
+Raises:
+  ValueError: when num_buckets &lt; 1.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-23'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-23'>#</a>
+      </div>
+      <p>Map scalars to bucket indices. Take special care of max(arr).</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-24'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-24'>#</a>
+      </div>
+      <p>Map each scalar to the center of a bucket.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-25'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-25'>#</a>
+      </div>
+      <p>Returns a replacement node for input_node containing bucketed floats.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-26'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-26'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-27'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-27'>#</a>
+      </div>
+      <p>Currently, the parameter FLAGS.bitdepth is used to compute the
+number of buckets as 1 &lt;&lt; FLAGS.bitdepth, meaning the number of
+buckets can only be a power of 2.
+This could be fixed by introducing a new parameter, num_buckets,
+which would allow for more flexibility in chosing the right model
+size/accuracy tradeoff. But I didn't want to add more parameters
+to this script than absolutely necessary.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-28'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-28'>#</a>
+      </div>
+      <p>Returns replacement nodes for input_node using the Dequantize op.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-29'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-29'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-30'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-30'>#</a>
+      </div>
+      <p>Make sure that the range includes zero.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-31'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-31'>#</a>
+      </div>
+      <p>min_value == max_value is a tricky case. It can occur for general
+tensors, and of course for scalars. The quantized ops cannot deal
+with this case, so we set max_value to something else.
+It's a tricky question what is the numerically best solution to
+deal with this degeneracy.
+TODO(petewarden): Better use a tolerance than a hard comparison?</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-32'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-32'>#</a>
+      </div>
+      <p>Takes a float graph, and rewrites it in quantized form.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-33'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-33'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-34'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-34'>#</a>
+      </div>
+      <p>Sets up the class to rewrite a float graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-35'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-35'>#</a>
+      </div>
+      <p>Args:
+  input_graph: A float graph to transform.
+  mode: A string controlling how quantization is performed -
+    round, quantize, eightbit, or weights.
+  quantized_input_range: if set, assume the input is
+    quantized and represents the range
+    [quantized_input_range[0], quantized_input_range[1]]
+  fallback_quantization_range: if set, then for nodes where the quantization
+    range can't be inferred from the graph, use the range
+    [fallback_quantization_range[0], fallback_quantization_range[1]) instead
+    of using a RequantizationRange node in the graph.</p>
+<p>Raises:
+  ValueError: Two nodes with the same name were found in the graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-36'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-36'>#</a>
+      </div>
+      <p>Data that is valid only during the recursive call to rewrite the graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-37'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-37'>#</a>
+      </div>
+      <p>Builds a mapping of node names to their defs from the graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-38'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-38'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-39'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-39'>#</a>
+      </div>
+      <p>Triggers rewriting of the float graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-40'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-40'>#</a>
+      </div>
+      <p>Args:
+  output_node_names: A list of names of the nodes that produce the final
+    results.</p>
+<p>Returns:
+  A quantized version of the float graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-41'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-41'>#</a>
+      </div>
+      <p>The entry point for simple rounding quantization.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-42'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-42'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-43'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-43'>#</a>
+      </div>
+      <p>The entry point for quantizing nodes to eight bit and back.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-44'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-44'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-45'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-45'>#</a>
+      </div>
+      <p>Handles quantizing a single node.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-46'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-46'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-47'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-47'>#</a>
+      </div>
+      <p>Should the current node merge with self.state.output_node_stack[-1]?</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-48'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-48'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-49'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-49'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-50'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-50'>#</a>
+      </div>
+      <p>The entry point for transforming a graph into full eight bit.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-51'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-51'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-52'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-52'>#</a>
+      </div>
+      <p>It will have been merged into the underlying node.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-53'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-53'>#</a>
+      </div>
+      <h6></h6>
+<p>Note: if more cases are added here, you may need to update the op
+name lists in the loop over children at the start of the function.</p>
+<h6></h6>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-54'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-54'>#</a>
+      </div>
+      <p>Adds input conversion nodes to handle quantizing the underlying node.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-55'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-55'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-56'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-56'>#</a>
+      </div>
+      <p>Builds constant nodes needed for quantization of inputs.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-57'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-57'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-58'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-58'>#</a>
+      </div>
+      <p>Takes one float input to an op, and converts it to quantized form.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-59'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-59'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-60'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-60'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-61'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-61'>#</a>
+      </div>
+      <p>Use the inputs to the FakeQuantWithMinMaxVars node as the inputs to
+Requantize.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-62'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-62'>#</a>
+      </div>
+      <p>Add a RequantizationRange node for finding the min and max values.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-63'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-63'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-64'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-64'>#</a>
+      </div>
+      <p>Replaces a MatMul node with the eight bit equivalent sub-graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-65'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-65'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-66'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-66'>#</a>
+      </div>
+      <p>Replaces a Conv2D node with the eight bit equivalent sub-graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-67'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-67'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-68'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-68'>#</a>
+      </div>
+      <p>Replaces a BiasAdd node with the eight bit equivalent sub-graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-69'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-69'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-70'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-70'>#</a>
+      </div>
+      <p>Replaces a single-tensor node with the eight bit equivalent sub-graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-71'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-71'>#</a>
+      </div>
+      <p>Converts a node like this:</p>
+<p>Shape(f)   Input(f)
+     |          |
+     +--------v v
+            Operation
+                |
+                v
+               (f)</p>
+<p>Into a quantized equivalent:</p>
+<pre><code>            Input(f)              ReshapeDims
+               +------v v-------------+
+               |    Reshape
+               |      |
+               |      |          ReductionDims
+               |      +-----+         |
+               |      | +---c---------+
+               |      v v   v v-------+
+               |      Min   Max
+               |  +----+      |
+               v  v  v--------+
+              Quantize
+                  |
+                  v
+           QuantizedOperation
+              |   |   |
+              v   v   v
+              Dequantize
+                  |
+                  v
+                 (f)
+</code></pre>
+<p>Args:
+  original_node: Float node to be converted.
+  add_op_function: Function to create the actual node.</p>
+<p>Returns:
+  Subgraph representing the quantized version of the original node.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-72'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-72'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-73'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-73'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-74'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-74'>#</a>
+      </div>
+      <p>Replaces a Concat node with the eight bit equivalent sub-graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-75'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-75'>#</a>
+      </div>
+      <p>Converts a node like this:</p>
+<p>Shape(f)   Input0(f)   Input1(f)
+     |          |            |
+     +--------v v v----------+
+              Concat
+                |
+                v
+               (f)</p>
+<p>Into a quantized equivalent:</p>
+<p>Shape(f)     Input0(f)             ReshapeDims                  Input1(f)
+     |             +------v v--------------+------------------v v------+
+     |             |    Reshape                             Reshape    |
+     |             |      |                                     |      |
+     |             |      |           ReductionDims             |      |
+     |             |      +------+         |           +--------+      |
+     |             |      |  +---c---------+-----------c-----+  |      |
+     |             |      +v v   v v-------+---------v v     v v+      |
+     |             |       Min   Max                 Min     Max       |
+     |             |  +----+      |                   |       +-----+  |
+     |             v  v  v--------+                   +----------v  v  v
+     |            Quantize                                       Quantize
+     |                +------------------+   +----------------------+
+     +-------------------------------+   |   |
+                                     v   v   v
+                                  QuantizedConcat
+                                     |   |   |
+                                     v   v   v
+                                    Dequantize
+                                         |
+                                         v
+                                        (f)
+Args:
+  original_node: Float node to be converted.</p>
+<p>Returns:
+  Subgraph representing the quantized version of the original node.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-76'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-76'>#</a>
+      </div>
+      <p>Replaces a placeholder node with a quint8 placeholder node+dequantize.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-77'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-77'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-78'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-78'>#</a>
+      </div>
+      <p>Convert the placeholder into a quantized type.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-79'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-79'>#</a>
+      </div>
+      <p>Add a dequantize to convert back to float.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-80'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-80'>#</a>
+      </div>
+      <p>For the descent over the graph to work, the dequantize node must be named
+current_node.name.  However, for the feeding of the graph to work, the
+placeholder must have the name current_node.name; so record a final set
+of renames to apply after all processing has been done.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-81'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-81'>#</a>
+      </div>
+      <p>Replaces a Reshape node with the eight bit equivalent sub-graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-82'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-82'>#</a>
+      </div>
+      <p>Args:
+  original_node: Float node to be converted.</p>
+<p>Returns:
+  Subgraph representing the quantized version of the original node.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-83'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-83'>#</a>
+      </div>
+      <p>Replaces a MatMul node with the eight bit equivalent sub-graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-84'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-84'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-85'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-85'>#</a>
+      </div>
+      <p>Inserts one node into the new graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-86'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-86'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-87'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-87'>#</a>
+      </div>
+      <p>Removes unneeded pairs of quantize/dequantize ops from the graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-88'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-88'>#</a>
+      </div>
+      <p>This is a bit of a tricky function, because it's attempting to spot the
+pattern of dequantizing from eight-bit up to float, and then immediately
+quantizing back down to eight bits again, that's introduced by previous
+passes that do 'key-hole' conversions of individual nodes but have to
+convert back to float to match the previous output interface, since they
+don't know that the next op can handle quantized tensors.
+It works by:
+ - Looking for Quantize nodes.
+ - Checking to see if their first input is a Dequantize node.
+ - Seeing if their min/max inputs come from Min/Max nodes.
+ - Making sure those Min/Max nodes are being fed from the same Dequantize.
+ - Or that the Min is indirectly being fed from the same Dequantize as Max.
+ - Making sure the Dequantize is going through a Reshape (which we add
+   during the previous pass when we create the quantize sub-graph).
+ - Looking for the dims Const op for the Min/Max dims.
+If all of these conditions are met, then it's a sub-graph pattern that
+we know how to optimize out (and is likely the common one we've introduced).
+We then rewire the graph to skip it entirely, and then rely on the dead node
+removal pass to get rid of any nodes that are no longer needed.</p>
+<p>Args:
+  old_graph: The model we'll be stripping redundant nodes from.</p>
+<p>Returns:
+  A graph with the unnecessary nodes removed.</p>
+<p>Raises:
+  ValueError: Two nodes with the same name were found in the graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-89'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-89'>#</a>
+      </div>
+      <p>We go through all the nodes, looking for any that match the patterns we
+know how to optimize away.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-90'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-90'>#</a>
+      </div>
+      <p>We always start with a Quantize node, and examine its inputs to see if
+they are in a form that can be removed.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-91'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-91'>#</a>
+      </div>
+      <p>Do we have a Dequantize feeding in, with the same type as the Quantize?</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-92'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-92'>#</a>
+      </div>
+      <p>Now look at the other inputs, and ensure they're Min/Max nodes.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-93'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-93'>#</a>
+      </div>
+      <p>There are two different patterns for Min nodes we can recognize, one
+where the input comes directly from the same one as the Max, and
+another where we run it through another Min first, so check for both.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-94'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-94'>#</a>
+      </div>
+      <p>We recognize this pattern, so mark the graph edges to be rewired to
+route around it entirely, since we know it's a no-op.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-95'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-95'>#</a>
+      </div>
+      <p>Finally we apply all the rewiring we've marked to the graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-96'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-96'>#</a>
+      </div>
+      <p>Applies node renames in self.final_node_renames to self.output_graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-97'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-97'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-98'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-98'>#</a>
+      </div>
+      <p>Removes nodes that are no longer needed for inference from the graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-99'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-99'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-100'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-100'>#</a>
+      </div>
+      <p>Quantize float Const ops.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-101'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-101'>#</a>
+      </div>
+      <p>There are two modes of operations, both replace float Const ops with
+quantized values.
+1. If quantization_mode is "weights_rounded", this function replaces float
+Const ops with quantized float Const ops - same as the original op, but
+float values being mapped to the center of one of 1&lt;&lt;FLAGS.bitdepth buckets.
+This does not change the raw model size, but compression algorithms such as
+zip (as used for compressing apks) or bzip2 will achieve a very good
+compression ratio.
+2. For other quantization modes ("MIN_COMBINED" or "MIN_FIRST"), float
+Const ops are quantized and replaced by a tuple of four ops to perform
+the dequantization at runtime:
+* eight-bit Const (bucket indices, same shape as original float Const op
+* two float Const ops (min and max value of original float Const op)
+* Dequantize op to convert the eight-bit consts to float tensors.
+The quantization mode is important because we see accuracy problems when
+quantizing weights for different situations depending on the algorithm
+used. We haven't figured out exactly what the underlying cause is yet,
+unfortunately.</p>
+<p>Args:
+  input_graph: A GraphDef of the model containing float Const ops.
+  quantization_mode: How to quantize and dequantize the values.</p>
+<p>Returns:
+  A GraphDef of the converted graph.</p>
+<p>Raises:
+  ValueError: If quantization_mode is unsupported.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-102'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-102'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-103'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-103'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>

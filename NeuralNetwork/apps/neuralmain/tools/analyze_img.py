@@ -1,9 +1,9 @@
 """Image file analyse in this module
 
-:Date: 24-04-2020
-:Version: Beta
-:Authors:
-    - Mechanoid
+    :Date: 24-04-2020
+    :Version: Beta
+    :Authors:
+        - Mechanoid
 """
 
 import os
@@ -18,8 +18,8 @@ def move_to_dir(plant_type, img_path):
 
     - Parameters:
         :plant_type(str): type of plant which should be used to dir name
-        :img_path(str): path to img file
 
+        :img_path(str): path to img file
     """
     requests_path = str(pathlib.Path(__file__).parent.absolute()).replace('NeuralNetwork\\apps\\neuralmain\\tools', '') \
                     + 'media\\requests\\'  # path to requests
@@ -32,9 +32,7 @@ def move_to_dir(plant_type, img_path):
 
 
 def translate(name):
-    """ Function get dict from 'plants_list.py' -> translate_dict. Search coincidences and translate ENG to RUS,
-    else - leaves current name
-
+    """ Function get dict from 'plants_list.py' -> translate_dict. Search coincidences and translate ENG to RUS, else - leaves current name
     - Parameters:
         :name(str): type of plant which should be translated
 
@@ -50,10 +48,11 @@ def translate(name):
 
 def compose_answer(analyze_data, img_path):
     """ Function analyse answer from TensorFlow and draws conclusions
-
     - Parameters:
         :analyze_data(list): input two-dimensional array which has the appearance of a plant and a match rate
+
         :img_path(str): path to img file
+
     - Returns:
         :return_data(str): msg(possible plant type, chance) and file processing time
     """
@@ -84,9 +83,9 @@ def compose_answer(analyze_data, img_path):
 
 def detect_image(img_name):
     """ Function processes and defines the plant in the photograph.
-
     - Parameters:
         :img_name(str): name of img file
+
     - Returns:
         :return_data(str): answer(message have type of plant and processing time)
     """

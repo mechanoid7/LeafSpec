@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>plants_list.py</title>
+  <link rel="stylesheet" href="..\..\..\..\pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div id="background"></div>
+  <div class='section'>
+    <div class='docs'><h1>plants_list.py</h1></div>
+  </div>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      <p>Dict of ENG:RUS plants name</p>
+<pre><code>:Date: 08-05-2020
+:Version: Beta
+:Authors:
+    - Mechanoid
+</code></pre>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="n">translate_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;acacia&#39;</span><span class="p">:</span> <span class="s1">&#39;акация&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;apple&#39;</span><span class="p">:</span> <span class="s1">&#39;яблоко&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;apricot&#39;</span><span class="p">:</span> <span class="s1">&#39;абрикос&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ash&#39;</span><span class="p">:</span> <span class="s1">&#39;ясень&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;aspen&#39;</span><span class="p">:</span> <span class="s1">&#39;осина&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;beech&#39;</span><span class="p">:</span> <span class="s1">&#39;бук&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;birch&#39;</span><span class="p">:</span> <span class="s1">&#39;береза&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;cactus&#39;</span><span class="p">:</span> <span class="s1">&#39;кактус&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;cherry&#39;</span><span class="p">:</span> <span class="s1">&#39;вишня&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;chestnut&#39;</span><span class="p">:</span> <span class="s1">&#39;каштан&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;cork_oak&#39;</span><span class="p">:</span> <span class="s1">&#39;пробковый дуб&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;daisy&#39;</span><span class="p">:</span> <span class="s1">&#39;маргаритка&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;dandelion&#39;</span><span class="p">:</span> <span class="s1">&#39;одуванчик&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;hazelnut&#39;</span><span class="p">:</span> <span class="s1">&#39;фундук&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;juniper&#39;</span><span class="p">:</span> <span class="s1">&#39;можжевельник&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;larch&#39;</span><span class="p">:</span> <span class="s1">&#39;лиственница&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;linden&#39;</span><span class="p">:</span> <span class="s1">&#39;липа&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;maple&#39;</span><span class="p">:</span> <span class="s1">&#39;клён&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;merry&#39;</span><span class="p">:</span> <span class="s1">&#39;черешня&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;mulberry&#39;</span><span class="p">:</span> <span class="s1">&#39;шелковица&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;oak&#39;</span><span class="p">:</span> <span class="s1">&#39;дуб&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;orange&#39;</span><span class="p">:</span> <span class="s1">&#39;апельсин&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;pine&#39;</span><span class="p">:</span> <span class="s1">&#39;сосна&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;poplar&#39;</span><span class="p">:</span> <span class="s1">&#39;тополь&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;raspberry&#39;</span><span class="p">:</span> <span class="s1">&#39;малина&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;rowan&#39;</span><span class="p">:</span> <span class="s1">&#39;рябина&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;spruce&#39;</span><span class="p">:</span> <span class="s1">&#39;ель&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;strawberry&#39;</span><span class="p">:</span> <span class="s1">&#39;клубника&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;viburnum&#39;</span><span class="p">:</span> <span class="s1">&#39;калина&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;walnut&#39;</span><span class="p">:</span> <span class="s1">&#39;грецкий орех&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;willow&#39;</span><span class="p">:</span> <span class="s1">&#39;ива&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>

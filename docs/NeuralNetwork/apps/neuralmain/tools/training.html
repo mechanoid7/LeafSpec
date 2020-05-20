@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>training.py</title>
+  <link rel="stylesheet" href="..\..\..\..\pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div id="background"></div>
+  <div class='section'>
+    <div class='docs'><h1>training.py</h1></div>
+  </div>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      <p>This module have func to retrain system</p>
+<pre><code>:Date: 24-04-2020
+:Version: Beta
+:Authors:
+    - Mechanoid
+</code></pre>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pathlib</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">os</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <p>Get str from file and find for time difference(in second)</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">delta_datetime</span><span class="p">(</span><span class="n">datetime_old_get</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <ul>
+<li>
+<p>Parameters:
+    :param datetime_old_get(datetime str): time of last retraining</p>
+</li>
+<li>
+<p>Returns:
+    :delta(int): difference of now and old datetime in seconds</p>
+</li>
+</ul>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">datetime_old</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime_old_get</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>  <span class="c1"># delete &#39;\n&#39; and &#39;#&#39; from str</span>
+    <span class="n">datetime_now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>  <span class="c1"># take current datetime</span>
+    <span class="n">datetime_old</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">datetime_old</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">)</span>  <span class="c1"># convert str to &lt;datetime&gt; object</span>
+    <span class="n">datetime_delta</span> <span class="o">=</span> <span class="n">datetime_now</span> <span class="o">-</span> <span class="n">datetime_old</span>  <span class="c1"># find datetime difference and convert to seconds</span>
+    <span class="n">delta</span> <span class="o">=</span> <span class="n">datetime_delta</span><span class="o">.</span><span class="n">seconds</span>  <span class="c1"># get delta time in sec</span>
+    <span class="n">delta</span> <span class="o">+=</span> <span class="n">datetime_delta</span><span class="o">.</span><span class="n">days</span><span class="o">*</span><span class="mi">86400</span>  <span class="c1"># convert delta date to sec, sum(date + time)</span>
+    <span class="k">return</span> <span class="n">delta</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>This function try retrain system, sys cannot retrain if  not enough time has passed.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">retrain_sys</span><span class="p">():</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <pre><code>The time limit between retraining is made for the correct operation of the system.
+- Returns:
+</code></pre>
+<p>:return_arg(list): [True] if retrain successful, else [False, <em>time to retrain(in hour)</em>]</p>
+<p>function create PowerShell file (.ps1)</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">bin_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">absolute</span><span class="p">())</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;tools&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span><span class="s1">&#39;bin</span><span class="se">\\</span><span class="s1">&#39;</span>  <span class="c1"># path to &#39;bin&#39; dir</span>
+    <span class="n">ps1_path</span> <span class="o">=</span> <span class="n">bin_path</span> <span class="o">+</span><span class="s1">&#39;ReLearningSystem.ps1&#39;</span>
+
+    <span class="n">delta</span> <span class="o">=</span> <span class="mi">18000</span>  <span class="c1"># default value, if file missing. 18000sec -&gt; 5hour</span>
+    <span class="n">request_delta</span> <span class="o">=</span> <span class="mi">17999</span>  <span class="c1"># min delta value(seconds) for retrain</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">ps1_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="n">delta_datetime</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">(</span><span class="mi">64</span><span class="p">))</span>  <span class="c1"># read first line and override delta, if file available</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&gt;&gt;&gt;The file cannot be found, a new one will be created.&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">delta</span> <span class="o">&gt;</span> <span class="n">request_delta</span><span class="p">:</span>  <span class="c1"># if enough time has passed</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <pre><code>    datetime_line - write to file current data and time
+    command1 - command to retrain system
+    command2 - command to sleep after doing
+</code></pre>
+<p>print("PATH: &gt;&gt;&gt;", bin_path)</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">ps1_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">datetime_line</span> <span class="o">=</span> <span class="s1">&#39;#&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">))</span>
+        <span class="n">command1</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;python.exe </span><span class="si">{</span><span class="n">bin_path</span><span class="si">}</span><span class="s1">scripts</span><span class="se">\\</span><span class="s1">retrain.py --output_graph=</span><span class="si">{</span><span class="n">bin_path</span><span class="si">}</span><span class="s1">tf_files</span><span class="se">\\</span><span class="s1">retrained_graph.pb --output_labels=</span><span class="si">{</span><span class="n">bin_path</span><span class="si">}</span><span class="s1">tf_files</span><span class="se">\\</span><span class="s1">retrained_labels.txt --image_dir=</span><span class="si">{</span><span class="n">bin_path</span><span class="si">}</span><span class="s1">tf_files</span><span class="se">\\</span><span class="s1">leaf_photos&#39;</span>
+        <span class="n">command2</span> <span class="o">=</span> <span class="s1">&#39;Sleep -Seconds 300&#39;</span>
+
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">datetime_line</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>  <span class="c1"># write commands to file</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">command1</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">command2</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt; Start retrain system...&#39;</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">startfile</span><span class="p">(</span><span class="n">ps1_path</span><span class="p">)</span>  <span class="c1"># run script</span>
+        <span class="n">return_arg</span> <span class="o">=</span> <span class="p">[</span><span class="kc">True</span><span class="p">]</span>  <span class="c1"># function return &#39;True&#39; if retrain successful</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&gt;&gt;&gt; Unsuccessful attempt to retrain system, &#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;little time has passed since the last training(</span><span class="si">{</span><span class="n">delta</span><span class="o">/</span><span class="mi">3600</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> hours). &#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;Need </span><span class="si">{</span><span class="n">request_delta</span><span class="o">/</span><span class="mi">3600</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">+ hours.&#39;</span><span class="p">)</span>
+
+        <span class="n">return_arg</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="p">(</span><span class="n">request_delta</span><span class="o">-</span><span class="n">delta</span><span class="p">)</span><span class="o">/</span><span class="mi">3600</span><span class="p">]</span>  <span class="c1"># function return [&#39;False&#39;, time to capabilities retrain]</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>if retrain failed</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="k">return</span> <span class="n">return_arg</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p>python scripts/retrain.py --output_graph=tf_files/retrained_graph.pb --output_labels=tf_files/retrained_labels.txt --image_dir=tf_files/leaf_photos</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>

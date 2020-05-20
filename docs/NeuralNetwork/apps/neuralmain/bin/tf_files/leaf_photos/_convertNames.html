@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>_convertNames.py</title>
+  <link rel="stylesheet" href="..\..\..\..\..\..\pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div id="background"></div>
+  <div class='section'>
+    <div class='docs'><h1>_convertNames.py</h1></div>
+  </div>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      <p>Replaces a BiasAdd node with the eight bit equivalent sub-graph.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="n">raw_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;_plant_dict.leafsp&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+<span class="n">reformated_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;_plant_dict_reformated.leafsp&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">raw_file</span><span class="p">:</span>
+    <span class="n">reformated_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span> <span class="o">+</span> <span class="n">line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="s2">&quot;&#39;:&#39;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;&#39;,</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt;&gt;&gt;Reformat Done&#39;</span><span class="p">)</span>
+<span class="n">raw_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="n">reformated_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <p>Args:
+    original_node:</p>
+<p>Replaces a Conv2D node with the eight bit equivalent sub-graph.</p>
+<p>Args:
+    original_node:</p>
+<p>Replaces a MatMul node with the eight bit equivalent sub-graph.</p>
+<p>Args:
+    original_node:</p>
+<pre><code>Args:
+</code></pre>
+<p>quantized_output_name:
+   original_node_name:
+   min_tensor_index:</p>
+<pre><code>Args:
+</code></pre>
+<p>original_node:
+   quantized_output_name:</p>
+<p>Takes one float input to an op, and converts it to quantized form.</p>
+<p>Args:
+    namespace_prefix:
+    original_input_name:
+    reshape_dims_name:
+    reduction_dims_name:</p>
+<p>Builds constant nodes needed for quantization of inputs.</p>
+<p>Args:
+    namespace_prefix:</p>
+<p>Adds input conversion nodes to handle quantizing the underlying node.</p>
+<p>Args:
+    original_node:</p>
+<p>The entry point for transforming a graph into full eight bit.</p>
+<p>Args:
+    current_node:</p>
+<pre><code>Args:
+</code></pre>
+<p>node:</p>
+<p>Should the current node merge with self.state.output_node_stack[-1]?
+Handles quantizing a single node.</p>
+<p>Args:
+    input_node:</p>
+<p>The entry point for quantizing nodes to eight bit and back.</p>
+<p>Args:
+    current_node:</p>
+<p>The entry point for simple rounding quantization.</p>
+<p>Args:
+    current_node:</p>
+<p>Triggers rewriting of the float graph.</p>
+<p>Args:
+    output_node_names: A list of names of the nodes that produce the final
+        results.</p>
+<p>Returns:
+    A quantized version of the float graph.</p>
+<p>Builds a mapping of node names to their defs from the graph.</p>
+<p>Args:
+    graph:</p>
+<p>Args:
+   current_node:
+   nodes_map:
+   indent:
+   already_visited:</p>
+<p>Sets up the class to rewrite a float graph.</p>
+<p>Args:
+    input_graph: A float graph to transform.
+    mode: A string controlling how quantization is performed - round,
+        quantize, eightbit, or weights.
+    quantized_input_range: if set, assume the input is quantized and
+        represents the range [quantized_input_range[0],
+        quantized_input_range[1]]
+    fallback_quantization_range: if set, then for nodes where the</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>  <span class="n">Args</span><span class="p">:</span>
+      <span class="n">op</span><span class="p">:</span>
+      <span class="n">name</span><span class="p">:</span>
+      <span class="n">inputs</span><span class="p">:</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <pre><code>     quantization range can't be inferred from the graph, use the range
+     [fallback_quantization_range[0], fallback_quantization_range[1])
+     instead of using a RequantizationRange node in the graph.
+</code></pre>
+<p>Raises:
+     ValueError: Two nodes with the same name were found in the graph.</p>
+<p>Takes a float graph, and rewrites it in quantized form.
+Returns replacement nodes for input_node using the Dequantize op.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>  <span class="n">Args</span><span class="p">:</span>
+      <span class="n">name</span><span class="p">:</span>
+      <span class="n">value</span><span class="p">:</span>
+      <span class="n">dtype</span><span class="p">:</span>
+      <span class="n">shape</span><span class="p">:</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>Args:
+   input_node:
+   quantization_mode:</p>
+<p>Returns a replacement node for input_node containing bucketed floats.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>  <span class="n">Args</span><span class="p">:</span>
+      <span class="n">node</span><span class="p">:</span>
+      <span class="n">key</span><span class="p">:</span>
+      <span class="n">attr_value</span><span class="p">:</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>Args:
+   input_node:</p>
+<p>Quantizes a numpy array.</p>
+<p>This function maps each scalar in arr to the center of one of num_buckets
+buckets. For instance, quantize_array([0, 0.3, 0.6, 1], 2) =&gt; [0.25, 0.25,</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>  <span class="n">Args</span><span class="p">:</span>
+      <span class="n">node</span><span class="p">:</span>
+      <span class="n">key</span><span class="p">:</span>
+      <span class="n">value</span><span class="p">:</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>0.75, 0.75]</p>
+<p>Args:
+   arr: The numpy array to quantize.
+   num_buckets: The number of buckets to map "var" to.</p>
+<p>Returns:
+   The quantized numpy array.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>  <span class="n">Args</span><span class="p">:</span>
+      <span class="n">node</span><span class="p">:</span>
+      <span class="n">key</span><span class="p">:</span>
+      <span class="n">value</span><span class="p">:</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>Raises:
+   ValueError: when num_buckets &lt; 1.</p>
+<p>Replaces invalid characters in input names to get a unique node name.</p>
+<p>Args:
+    node_name:</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>  <span class="n">Args</span><span class="p">:</span>
+      <span class="n">node</span><span class="p">:</span>
+      <span class="n">key</span><span class="p">:</span>
+      <span class="n">value</span><span class="p">:</span>
+      <span class="n">dtype</span><span class="p">:</span>
+      <span class="n">shape</span><span class="p">:</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p>Makes sure that a tensor name has :0 if no explicit port exists.</p>
+<p>Args:
+    node_name:</p>
+<p>Strips off ports and other decorations to get the underlying node name.</p>
+<p>Args:</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>  <span class="n">Args</span><span class="p">:</span>
+      <span class="n">node</span><span class="p">:</span>
+      <span class="n">key</span><span class="p">:</span>
+      <span class="n">value</span><span class="p">:</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <p>node_name:</p>
+<p>Args:
+   node:
+   key:
+   value:</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>  <span class="n">Args</span><span class="p">:</span>
+      <span class="n">node</span><span class="p">:</span>
+      <span class="n">key</span><span class="p">:</span>
+      <span class="n">value</span><span class="p">:</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      <p>Args:
+   node:
+   key:
+   value:</p>
+<p>Args:
+   node:
+   key:
+   value:</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
