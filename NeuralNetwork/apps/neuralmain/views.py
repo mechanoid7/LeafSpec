@@ -177,5 +177,5 @@ def contacts(request):
 
 def pattern(request):
     """ Function pattern page. If current mode is Debug: load clear pattern page. """
-    return render(request, 'website/pattern.html')
+    return render(request, 'website_new/pattern.html')
 
