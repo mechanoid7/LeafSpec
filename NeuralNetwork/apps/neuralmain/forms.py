@@ -28,4 +28,4 @@ class ContactsForm(forms.ModelForm):
     """Form to contacts"""
     class Meta:
         model = Contacts
-        fields = ('user_email', 'message_field', 'author_ip')
+        fields = ('user_email', 'theme_field', 'message_field', 'author_ip')

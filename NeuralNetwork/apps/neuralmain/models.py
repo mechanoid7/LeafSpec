@@ -72,6 +72,7 @@ class Contacts(models.Model):
          - :author_ip(GenericIPAddressField): author IP-address
     """
     user_email = models.EmailField("Емаил пользователя")
+    theme_field = models.CharField("Тема", max_length=150)
     message_field = models.TextField("Сообщение", max_length=500)
     author_ip = models.GenericIPAddressField("ip адресс пользователя", default='0.0.0.0')
 

@@ -1,0 +1,27 @@
+{% extends 'website/pattern.html' %}
+{% load static %}
+
+{% block page_name %}
+    О нас
+{% endblock %}
+
+{% block current_about %}menu-button-current{% endblock %}
+
+{% block content %}
+    <h1>О проекте</h1>
+    <p>Leaf Spectator - сервис, созданный для распознавания растений на основе фотографии:</p>
+    <ul class="list">
+        <li>Создан в 2020 году;</li>
+        <li>Время обработки около 1с.;</li>
+        <li>Более 30 видов растений в базе данных;</li>
+        <li>Более 4800 изображений растений!</li>
+{#        <li>Много поситителей в месяц);</li>#}
+    </ul>
+    <p>
+        Мы принимаем все идеи, предложения и критику. Напишите нам на
+        <a href="mailto:leafspectator@gmail.com" title="Написать нам на электронный ящик">email</a>
+        или через <a href="/contacts" title="Заполнить форму">форму</a> обратной связи.
+    </p>
+    <br/><p>Создателем проекта является Никита (Mechanoid) Востриков.</p>
+
+{% endblock %}

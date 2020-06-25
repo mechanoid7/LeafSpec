@@ -3,37 +3,38 @@
 {% block page_name %}
     Авторизация
 {% endblock %}
-{% block current_auth %} imMnMnCurrent{% endblock %}
+
+{% block current_auth %}menu-button-current{% endblock %}
 
 {% block content %}
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {% if error %}
-            <div class="err">
+            <div class="error-message">
                 <p>{{ error }}</p>
             </div>
         {% else %}
             {% if message %}
-                <div class="msg">
+                <div class="info-message">
                     <p>{{ message }}</p>
                 </div>
             {% endif %}
         {% endif %}
-    <div class="auth-page">
+
+    <div class="auth-page-fields">
         {% if not message %}
-        <text>Логин: </text><p class="auth-page-obj"><input type="text" name="login_field" minlength="4" maxlength="30" required="" id="id_login_field"><br></p>
-        <text>Пароль: </text><p class="auth-page-obj"><input type="password" name="password_field" minlength="6" maxlength="32" required="" id="id_password_field"><br></p>
-        <button style="align-content: center" class="but-submit">Войти</button>
+        <text>Логин: </text><p class="page-obj"><input type="text" name="login_field" minlength="4" maxlength="30" required="" id="id_login_field"><br></p>
+        <text>Пароль: </text><p class="page-obj"><input type="password" name="password_field" minlength="6" maxlength="32" required="" id="id_password_field"><br></p>
+        <button type="submit" style="align-content: center" class="but-submit" title="">Войти</button>
         {% else %}
             {% if access %}
-                <h2 class="H2">Нажмите кнопку, чтоб переобучить систему</h2>
-                <text>Введите 'Подтвердить' в поле ниже для подтверждения: </text><p class="auth-page-obj"><input type="text" name="access_field" maxlength="30" pattern="[Пп]одтвердить" id="id_access_field"><br></p>
-                <button style="align-content: center" class="but-submit">Переобучить</button>
+                <h2 style="padding-bottom: 1em;">Нажмите кнопку, чтоб переобучить систему</h2>
+                <text class="page-obj">Введите 'Подтвердить' в поле ниже для подтверждения:</text><br/>
+                <p class="page-obj"><input type="text" name="access_field" maxlength="30" pattern="[Пп]одтвердить" id="id_access_field"><br></p>
+                <button style="align-content: center">Переобучить</button>
             {% endif %}
         {% endif %}
-
     </div>
-
 
     </form>
 {% endblock %}

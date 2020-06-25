@@ -1,89 +1,54 @@
 {% load static %}
 
-<!DOCTYPE html><!-- HTML5 -->
-<html prefix="og: http://ogp.me/ns#" lang="ru-RU" dir="ltr">
-	<head>
-		<title>{% block page_name %}{% endblock %} - Leaf spectator</title>
-
-    METADATA
-		<meta charset="utf-8" />
-		<!--[if IE]><meta http-equiv="ImageToolbar" content="False" /><![endif]-->
-		<meta name="author" content="Mechanoid" />
-		<meta name="description" content="LeafSpec project" />
-		<meta property="og:type" content="website" />
-		<meta property="og:url" content="http://leafspec.com/" />
-		<meta property="og:title" content="LeafSpectator" />
-		<meta property="og:site_name" content="Leaf spectator" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-    end METADATA
-        {% block sourse %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="author" content="Mechanoid" />
+    <meta name="description" content="Analyse and detect leaf of plants" />
+    <meta name="keywords" content="Leaf, spectator, nature, plants"/>
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="http://leafspec.com/" />
+    <meta property="og:title" content="LeafSpectator" />
+    <meta property="og:site_name" content="Leaf spectator" />
+    <link rel="stylesheet" type="text/css" href="{% static '/style/main.css' %}"/>
+    <link rel="shortcut icon" href="{% static '/style/image/favicon.png' %}" type="image/x-icon"/>
+    <title>{% block page_name %}{% endblock %} - LeafSpectator</title>
+</head>
+<body>
+    {% csrf_token %}
+    <div id="page-wrap">
+{#    <header class="header-block">#}
+    <header>
+{#        <div class="main-title">Leaf Spectator</div>#}
+        <div class="menu-button-block">
+            <a href="/" class="menu-button {% block current_main %}{% endblock %}" title="Главная страница">Главная</a>
+            <a href="/upload" class="menu-button {% block current_upload %}{% endblock %}" title="Страница для отправки изображения нам">Выгрузить фото</a>
+            <a href="/auth" class="menu-button {% block current_auth %}{% endblock %}" title="Страница авторизации">Авторизация</a>
+            <a href="/about" class="menu-button {% block current_about %}{% endblock %}" title="Информация про этот сервис">О проекте</a>
+            <a href="/contacts" class="menu-button {% block current_contacts %}{% endblock %}" title="Свяжитесь с нами">Контакты</a><br/>
+        </div>
+        <div class="main-title-block">
+            <a href="/" class="main-title">Leaf Spectator</a>
+            <text class="main-title-info">Для тех, кто хочет найти растение</text>
+        </div>
+    </header>
+    <div class="content">
+        {% block content %}
         {% endblock %}
-		<link rel="icon" href="{% static 'favicon.png' %}" type="image/png" />
-		<link rel="stylesheet" type="text/css" href="{% static 'style/reset.css' %}" media="screen,print" /> {#  save
-		<link rel="stylesheet" type="text/css" href="{% static 'style/fonts.css' %}"/> {#  save
-		<link rel="stylesheet" type="text/css" href="{% static 'style/buttons.css' %}"/> {#  save
-		<link rel="stylesheet" type="text/css" href="{% static 'style/fields.css' %}"/> {#  save
-		<link rel="stylesheet" type="text/css" href="{% static 'style/pages-styles.css' %}"/> {#  save
-		<link rel="stylesheet" type="text/css" href="{% static 'style/print.css' %}" media="print" /> {#  save
-		<link rel="stylesheet" type="text/css" href="{% static 'style/style.css' %}" media="screen,print" /> {#  save
-		<link rel="stylesheet" type="text/css" href="{% static 'style/template.css' %}" media="screen" /> {#  save
-		<link rel="stylesheet" type="text/css" href="{% static 'style/menu.css' %}" media="screen" />
-		<!--[if lte IE 7]><link rel="stylesheet" type="text/css" href="style/ie.css?12-0-6-24" media="screen" /><![endif]-->
-		<link rel="stylesheet" type="text/css" href="{% static 'pcss/main.css' %}" media="screen" /> {#  save
-		<!--[if lt IE 9]><link rel="stylesheet" type="text/css" href="{% static 'main.cssmain.cssa' %}="screen" /><![endif]-->
+    </div>
+    </div>
 
+    <footer>
+        <div class="footer-block">
+            <span>
+                <a href="mailto:leafspectator@gmail.com" class="footer-link-style" title="Написать нам на электронный ящик">Напишите нам!</a>
+                <a href="#" class="footer-link-style" title="Приложение находятся в разработке...">Мобильное приложение</a>
+                <a href="/FAQ" class="footer-link-style" title="Часто задаваемые вопросы">FAQ</a>
+            </span>
+            <text class="copyright" title="Механоид&copy; Все права защищены. 2020">Mechanoid&copy; All rights reserved. 2020</text>
+        </div>
+    </footer>
 
-	</head>
-	<body>
-		<div id="imHeaderBg"></div>
-		<div id="imFooterBg"></div>
-		<div id="imPage">
-			<div id="imHeader">
-				<h1 class="imHidden">Leaf spectator</h1>
-			</div>
-
-			<div id="imMnMnGraphics"></div>
-
-			<div id="imMnMn" class="auto">
-				<div class="hamburger-site-background menu-mobile-hidden"></div><div class="hamburger-button"><div><div><div class="hamburger-bar"></div><div class="hamburger-bar"></div><div class="hamburger-bar"></div></div></div></div><div class="hamburger-menu-background-container"><div class="hamburger-menu-background menu-mobile-hidden"><div class="hamburger-menu-close-button"><span>&times;</span></div></div></div>
-				<span itemscope itemtype="http://schema.org/Attorney"><a itemprop="url" href="/"><img src="{% static 'style/responsive-logo.png' %}" itemprop="logo" class="menu-mobile-logo" alt="Leaf spectator"/></a>
-				</span>
-                <ul class="auto menu-mobile-hidden">
-					<li id="imMnMnNode0" class="imPage{% block current_main %}{% endblock %}">
-						<a href="/">
-							<span class="imMnMnFirstBg">
-								<span class="imMnMnTxt"><span class="imMnMnImg"></span><span class="imMnMnTextLabel">Главная</span></span>
-							</span>
-						</a>
-					</li><li id="imMnMnNode3" class=" imPage{% block current_upload %}{% endblock %}">
-						<a href="/upload/">
-							<span class="imMnMnFirstBg">
-								<span class="imMnMnTxt"><span class="imMnMnImg"></span><span class="imMnMnTextLabel">Выгрузить фото</span></span>
-							</span>
-						</a>
-					</li><li id="imMnMnNode4" class=" imPage{% block current_auth %}{% endblock %}">
-						<a href="/auth/">
-							<span class="imMnMnFirstBg">
-								<span class="imMnMnTxt"><span class="imMnMnImg"></span><span class="imMnMnTextLabel">Авторизация</span></span>
-							</span>
-						</a>
-					</li><li id="imMnMnNode7" class=" imPage{% block current_contacts %}{% endblock %}">
-						<a href="/contacts/">
-							<span class="imMnMnFirstBg">
-								<span class="imMnMnTxt"><span class="imMnMnImg"></span><span class="imMnMnTextLabel">Контакты</span></span>
-							</span>
-						</a>
-					</li></ul>
-			</div>
-			<div id="imContent">
-{#                block for code out pattern#}
-                {% block content %}
-                {% endblock %}
-				</div>
-				<div id="imGroup_10" class="imEGroup"></div>
-            </div>
-			<div id="imFooter">
-				<div id="imFooterResponsiveContent">All rights reserved. Mechanoid. 2020.</div>
-			</div>
-	</body>
+</body>
 </html>

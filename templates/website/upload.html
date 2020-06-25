@@ -3,13 +3,13 @@
 {% block page_name %}
     Выгрузить фото
 {% endblock %}
-{% block current_upload %} imMnMnCurrent{% endblock %}
+{% block current_upload %}menu-button-current{% endblock %}
 
 {% block content %}
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <h1 class="H1">Вы можете отправить нам фото листка растения. </h1>
-        <h2 class="H2">Если изображение будет соответствовать нашим требованиям, оно будет использовано для усовершенствования проекта.</h2>
+        <h1>Вы можете отправить нам фото листка растения. </h1>
+        <h2 style="margin-bottom: 1em">Если изображение будет соответствовать нашим требованиям, оно будет использовано для усовершенствования проекта.</h2>
         {% if error %}
             <div class="err">
                 <p>{{ error }}</p>
@@ -22,13 +22,13 @@
             {% endif %}
         {% endif %}
         <span class="upload-page">
-            <text>Имя автора: </text><p class="upload-page-obj">{{ form.photo_author }}<br/></p>
-            <text>Вид растения: </text><p class="upload-page-obj">{{ form.photo_group }}<br/></p>
+            <text>Имя автора: </text><p class="page-obj">{{ form.photo_author }}<br/></p>
+            <text>Вид растения: </text><p class="page-obj">{{ form.photo_group }}<br/></p>
             <p class="upload-page-obj">{{ form.photo_file }}</p>
-            <button class="but-submit">Отправить</button>
+            <button>Отправить</button>
         </span>
 {#    <text class="info">Лист должен быть хорошо виден и освещён.<br/>Лист должен находится в центре изображения</text>#}
-    <p class="info">Лист должен быть хорошо виден и освещён.<br/>Лист должен находится в центре изображения.</p>
+    <p style="color: #636363">Лист должен быть хорошо виден и освещён.<br/>Лист должен находится в центре изображения.</p>
 
     </form>
 {% endblock %}

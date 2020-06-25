@@ -140,6 +140,10 @@ def auth(request):
     return render(request, 'website/auth.html', data_to_page)  # {'form': form}
 
 
+def about(request):
+    return render(request, 'website/about.html')
+
+
 def contacts(request):
     """ Function Contacts page. Ability to communicate with the administrator / moderator. If the fields  are valid - save letter to DB.
     Object of Contacts(see item neuralmain/models)
@@ -177,5 +181,8 @@ def contacts(request):
 
 def pattern(request):
     """ Function pattern page. If current mode is Debug: load clear pattern page. """
-    return render(request, 'website_new/pattern.html')
+    return render(request, 'website/pattern.html')
 
+
+def faq(request):
+    return render(request, 'website/faq.html')

@@ -9,6 +9,9 @@ urlpatterns = [
     path('upload/', views.upload, '', name='upload'),
     path('auth/', views.auth, name='auth'),
     path('contacts/', views.contacts, name='contacts'),
+
+    path('FAQ/', views.faq, name='FAQ'),
+    path('about/', views.about, name='about_service'),
 ]
 
 if settings.DEBUG:

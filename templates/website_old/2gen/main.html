@@ -1,0 +1,35 @@
+{% extends 'website/pattern.html' %}
+{% load static %}
+
+{% block page_name %}
+    Главная
+{% endblock %}
+{% block current_main %} imMnMnCurrent{% endblock %}
+
+{% block content %}
+    <form method="post" enctype="multipart/form-data">
+
+        {% csrf_token %}
+        <h1 class="H1">Мы попробуем опознать ваше растение.</h1>
+        <h2 class="H2">Загрузите фото в форму ниже.<br/>Загружайте фотографию всего листа растения, держа лист вертикально и в фокусе.</h2>
+        <div style="margin-bottom: 30px">
+        {% if error %}
+            <div class="err">
+                <p>{{ error }}</p>
+            </div>
+        {% else %}
+            {% if message %}
+                <div class="msg">
+                    <p>{{ message }}</p>
+                </div>
+            {% endif %}
+        {% endif %}
+        </div>
+        <div class="main-page" style="margin-top: 30pt">
+            <div class="main-page-obj" >{{ form.photo_file }}</div>
+            <button class="but-submit" style="width: 300px">Проверить!</button>
+        </div>
+        <a href="pattern" style="font-size: 30px">Шаблон</a>
+
+    </form>
+{% endblock %}
