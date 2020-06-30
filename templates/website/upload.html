@@ -11,12 +11,12 @@
         <h1>Вы можете отправить нам фото листка растения. </h1>
         <h2 style="margin-bottom: 1em">Если изображение будет соответствовать нашим требованиям, оно будет использовано для усовершенствования проекта.</h2>
         {% if error %}
-            <div class="err">
+            <div class="error-message">
                 <p>{{ error }}</p>
             </div>
         {% else %}
             {% if message %}
-                <div class="msg">
+                <div class="info-message">
                     <p>{{ message }}</p>
                 </div>
             {% endif %}

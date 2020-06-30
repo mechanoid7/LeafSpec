@@ -230,7 +230,7 @@ h2{
     padding-right: 1em;
     background-image: linear-gradient(var(--first-gradient-color), #d8d8d8);
     width: 50%;
-    min-height: 30em;
+    min-height: 36em;
     margin-right: auto;
     margin-left: auto;
 }
