@@ -1,11 +1,9 @@
 """NeuralMain app logic. Each function is responsible for one page."""
 import copy
 import concurrent.futures
-import time
 
-from queue import Queue
 from datetime import datetime
-from threading import Thread
+from NeuralNetwork.settings import DEBUG
 from django.shortcuts import render
 from django.core.files.storage import FileSystemStorage
 from .forms import PhotoToDatabaseForm, PhotoRequestForm, ContactsForm, AuthForm
@@ -13,41 +11,7 @@ from .admin import auth_data
 from .tools.training import retrain_sys
 from .tools.work_optimization import MyThread, put_to_queue
 from .tools.analyze_img import detect_image, save_user_upload
-from .tools.file_manipulator import check_file_name, check_filename_extension, delete_file
-
-
-# class UploadUserImg(Thread):
-#     def __init__(self, url, user_plant_type):
-#         Thread.__init__(self)
-#         self.url = url
-#         self.user_plant_type = user_plant_type
-#
-#     def run(self):
-#         save_user_upload(self.url, user_type=self.user_plant_type)
-
-# class MyThread(Thread):
-#     def __init__(self, queue):
-#         Thread.__init__(self)
-#         self.queue = queue
-#         # self.url = url
-#         # self.user_plant_type = user_plant_type
-#
-#     def run(self):
-#         # Получаем url из очереди
-#         url, user_plant_type = self.queue.get()
-#         # Скачиваем файл
-#         self.save_user_upload_image(url, user_plant_type)
-#         # Отправляем сигнал о том, что задача завершена
-#         self.queue.task_done()
-#
-#     def save_user_upload_image(self, url, user_plant_type):
-#         save_user_upload(url, user_type=user_plant_type)
-
-
-# def start_thread(func):
-#     def wrapped():
-
-
+from .tools.file_manipulator import check_file_name, check_filename_extension, file_exist_rename,delete_file
 
 
 def main(request):
@@ -116,52 +80,42 @@ def upload(request):
         if not uploaded_file.multiple_chunks(chunk_size=20971520):  # 20 MB
             x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')  # take ip address user
             if x_forwarded_for:
-                ipaddres = x_forwarded_for.split(',')[-1].strip()
+                ipaddress = x_forwarded_for.split(',')[-1].strip()
             else:
-                ipaddres = request.META.get('REMOTE_ADDR')
+                ipaddress = request.META.get('REMOTE_ADDR')
 
             uploaded_file.name = check_file_name(uploaded_file.name)
 
+            # in this block the presence of the file is checked and renamed if a file with the same name exists
+            fs = FileSystemStorage()  # declare filesystem
+            raw_url = fs.url("img_to_database\\" + uploaded_file.name)  # set raw url
+            [path, filename] = file_exist_rename(url=raw_url)  # set new PATH and FILENAME from function if filename exist, nsme will bw changed
+            url = fs.url("img_to_database\\" + filename)  # set processed url
+
+            # modify POST-request: set datetime, filename, ip-address
             post = copy.deepcopy(request.POST)  # make request copy and change data
-            post['photo_author_ip'] = ipaddres  # set ip address
+            post['photo_author_ip'] = ipaddress  # set ip address
             post['photo_date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # set current time
-            post['photo_name'] = uploaded_file.name  # name=group+time
-            user_plant_type = post['photo_group']
+            post['photo_name'] = filename
             request.POST = copy.deepcopy(post)  # update request for database
-
             form = PhotoToDatabaseForm(request.POST, request.FILES)
+
             if form.is_valid():
-                form.save()
+                form.save()  # save data to DB
                 try:
-                    fs = FileSystemStorage()
-                    # name = fs.save("img_to_database\\" + uploaded_file.name, uploaded_file)  # BASE_DIR_DATA_REQUESTS+"\\"+
-                    url = fs.url("img_to_database\\"+uploaded_file.name)
+                    user_plant_type = post['photo_group']  # set type of plant indicated by user
+                    msg = put_to_queue(url, user_plant_type)  # run func, add to queue and move file to new dir, return error or None
 
-                    # my_thread = UploadUserImg(url=url, user_plant_type=user_plant_type)
-                    # func_thread = save_user_upload(url, user_type=user_plant_type)
-                    # args_thread = (url, user_plant_type)
-                    # print(">>>>>>TYPE:", type(func))
+                    if msg:
+                        data_to_page['error'] = "Критическая ошибка, свяжитесь с нами для решения. "
+                        if DEBUG: data_to_page['error'] += msg  # add msg if DEBUG mode enabled
+                    else:
+                        data_to_page['message'] = 'Спасибо за помощь проекту.'
 
+                except Exception as exc:
+                    data_to_page['error'] = 'Критическая ошибка. '
+                    if DEBUG: data_to_page['error'] + str(exc)  # add msg if DEBUG mode enabled
 
-                    put_to_queue(url, user_plant_type)
-
-
-                    # print(msg)
-                    # my_thread = MyThread(url=url, user_plant_type=user_plant_type)
-                    # my_thread.start()
-
-                    # save_user_upload(url, user_type=user_plant_type)
-
-                    data_to_page['message'] = 'Спасибо за помощь проекту.'
-
-                except:
-                    data_to_page['error'] = 'Критическая ошибка.'
-
-                #
-                # with concurrent.futures.ThreadPoolExecutor() as executor:
-                #     detected_image = executor.submit(detect_image, url).result()
-
-                # return redirect('upload')  # update page
         else:
             form = PhotoToDatabaseForm(request.POST, request.FILES)
             data_to_page['error'] = 'Big file'
@@ -182,17 +136,23 @@ def auth(request):
     """
     data_to_page = {}
     if request.method == 'POST':
+        post = copy.deepcopy(request.POST)  # make request copy and change data
+        post['login_date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # set current time
+        request.POST = copy.deepcopy(post)
+
         form = AuthForm(request.POST)
         if form.is_valid():
-            login = request.POST['login_field']  # запись логина и пароля в переменные
+            login = request.POST['login_field']  # write login and pass to var
             password = request.POST['password_field']
-            if login in auth_data and password == auth_data[login]:  # если есть логин в списке и пароль к нему правильные - пользователь получает допуск
+            if login in auth_data and password == auth_data[login]:  # если есть логин в списке и пароль к нему правильные - пользователь получает доcтуп
+
+                form.save()  # add entity to DB
                 #easteregg
                 data_to_page['access'] = True
                 if login == 'mechanoid':  # особое сообщение для меня :3
                     data_to_page['message'] = 'Привет, хозяин!'
                 else:
-                    data_to_page['message'] = 'Добро пожаловать на Leaf Spectator!'
+                    data_to_page['message'] = 'Добро пожаловать в админ-панель Leaf Spectator!'
                 print(f">>> User '{login}' logged in to the site.")
             else:
                 data_to_page['error'] = 'Неверный логин или пароль.'
@@ -245,7 +205,7 @@ def contacts(request):
             # return redirect('upload')  # update page
         else:
             form = ContactsForm(request.POST)
-            data_to_page['error'] = 'Big file'
+            data_to_page['error'] = 'Ошибка отправки обращения'
     else:
         form = ContactsForm()
     data_to_page['form'] = form
@@ -254,7 +214,8 @@ def contacts(request):
 
 def pattern(request):
     """ Function pattern page. If current mode is Debug: load clear pattern page. """
-    return render(request, 'website/pattern.html')
+    if DEBUG:
+        return render(request, 'website/pattern.html')
 
 
 def faq(request):

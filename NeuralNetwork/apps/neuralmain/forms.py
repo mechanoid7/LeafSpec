@@ -21,7 +21,7 @@ class AuthForm(forms.ModelForm):
     """Form to auth"""
     class Meta:
         model = Auth
-        fields = ('login_field', 'password_field')  # , 'access_field'
+        fields = ('login_field', 'password_field', 'login_date')  #  , 'access_field'
 
 
 class ContactsForm(forms.ModelForm):

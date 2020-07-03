@@ -125,15 +125,31 @@ def check_filename_extension(file_name):
     return return_data
 
 
-def delete_file(file_path):
+def file_exist_rename(url):
+    """If file exist - rename him
+    
+    :param url: url to file from MEDIA
+    :return: path to renamed/old file and new filename
+    """
+    path = str(pathlib.Path(__file__).parent.absolute()).replace('\\NeuralNetwork\\apps\\neuralmain\\tools', '')\
+               + str(url).replace('/', '\\')  # set path to file
+    if os.path.isfile(path):  # if file exist
+        path = rename_file(path)  # rename file
+        # print("----------Start rename, new path:", path)
+    filename = path.rsplit('\\', 1)[-1]  # get filename from path
+
+    return path, filename
+
+
+def delete_file(url):
     """This function try delete file from media
     - Parameters:
-        :file_path(str): path to file which should do deleted
+        :url(str): path to file which should do deleted
     """
 
     try:
         full_path = str(pathlib.Path(__file__).parent.absolute()).replace('\\NeuralNetwork\\apps\\neuralmain\\tools',
-                                                                          '') + str(file_path).replace('/', '\\')
+                                                                          '') + str(url).replace('/', '\\')
         os.remove(full_path)  # remove file
-    except Exception:
+    except:
         pass
