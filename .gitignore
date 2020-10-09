@@ -1,5 +1,7 @@
 __pycache__/
 venv/
+virtual_env/
 .idea/
 NeuralNetwork/apps/neuralmain/bin/tf_files/leaf_photos
+NeuralNetwork/apps/neuralmain/bin/tf_files/retrained_graph.pb
 kanban.XLSX
